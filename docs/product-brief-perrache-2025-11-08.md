@@ -462,6 +462,19 @@ Existing tools solve pieces:
 - Captures tribal knowledge
 - Community-driven documentation
 
+**MCP Server for AI-Assisted API Discovery in IDE (Moonshot)**
+- Model Context Protocol (MCP) server enabling AI coding assistants to query Perrache catalog directly
+- Integration with Claude Code, GitHub Copilot, Cursor, and other AI-powered IDEs
+- Real-time semantic API discovery during development:
+  - Developer asks AI: "I need to get user profile data"
+  - AI queries Perrache MCP → discovers canonical endpoint semantically
+  - AI generates implementation code with correct endpoint, proper error handling, and up-to-date schema
+- Surfaces breaking change warnings during code generation
+- Prevents duplicate API builds by surfacing existing solutions at the moment of need
+- Delivers endpoint ownership, documentation, and usage examples directly in developer workflow
+- **Requires:** Mature API catalog, MCP protocol implementation, IDE integrations
+- **Impact:** Eliminates context-switching between IDE and catalog, embeds discovery into natural coding flow
+
 **Advanced Governance Features (Moonshot)**
 - Landscape owner role with curation powers
 - Mark canonical sources with badges
