@@ -146,6 +146,17 @@ No tool bridges the "last mile" - from framework-generated OpenAPI specs to an a
 - Governance dashboard for platform teams to manage API ecosystem health
 - Enables data-driven consolidation decisions and strategic domain ownership
 
+**7. Total Cost of Reuse Decision Framework (Nice-to-Have)**
+- Built-in TCR calculator for governance teams to evaluate reuse vs. build-new decisions
+- Quantifies hidden costs: Initial Savings vs. Long-Term Costs (governance overhead, coupling/agility costs, performance bloat)
+- Interactive scorecard system:
+  - **Volatility Score (1-5):** How likely is the business domain to change?
+  - **Consumer Divergence Score (1-5):** How different are consumer needs?
+  - **Number of Consumers:** How many teams will use this API?
+- Data-driven decision rules: High volatility or divergence → build separate APIs instead of forcing reuse
+- Prevents creating high-maintenance shared APIs that burden all consumers with features they don't need
+- **Why valuable:** Governance teams gain analytical rigor to distinguish beneficial reuse from costly forced sharing
+
 **The "Magic Moment":**
 Developer searches "user profile data" →
 - Perrache shows 3 semantically-related endpoints across different services
@@ -450,6 +461,20 @@ Existing tools solve pieces:
   - Fragmentation hotspots
 - Enable governance team to contact teams building duplicates
 - **Requires:** Mature dataset, advanced visualization
+
+**Total Cost of Reuse Calculator (Phase 2 - Governance)**
+- Interactive TCR decision support tool for governance teams evaluating reuse vs. build-new decisions
+- Guided workflow capturing:
+  - **Initial Savings:** Cost of building new vs. cost of integration/compromise
+  - **Long-Term Costs:** Governance overhead, coordination burden, testing complexity, cost of delay, performance bloat
+  - **Risk Scorecard:** Volatility score, consumer divergence score, number of consumers
+- Real-time calculation of TCR = (Long-Term Costs) - (Initial Savings)
+- Visual decision matrix: Green zone (reuse recommended) vs. Red zone (build separate)
+- Historical TCR tracking: Learn from past reuse decisions to refine organizational thresholds
+- Integration with API catalog: Pre-populate calculator with existing consumer counts and historical change frequency
+- Export reports for architecture review boards and governance committees
+- **Requires:** Established governance workflows, historical data on API evolution patterns
+- **Impact:** Prevents catastrophic forced-sharing scenarios where long-term costs outweigh initial savings
 
 **API Design Editor with Semantic Suggestions (Moonshot)**
 - Built-in OpenAPI editor
