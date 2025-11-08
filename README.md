@@ -83,7 +83,7 @@ Perrache is open source and welcomes contributions. More details coming soon.
 
 ## License
 
-TBD
+GNU AFFERO GENERAL PUBLIC LICENSE
 
 ## Contact
 
