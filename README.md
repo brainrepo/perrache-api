@@ -87,8 +87,8 @@ TBD
 
 ## Contact
 
-- GitHub Issues: [Report bugs or request features](https://github.com/yourusername/perrache/issues)
-- Discussions: [Join the conversation](https://github.com/yourusername/perrache/discussions)
+- GitHub Issues: [Report bugs or request features](https://github.com/brainrepo/perrache-api/issues)
+- Discussions: [Join the conversation](https://github.com/brainrepo/perrache-api/discussions)
 
 ---
 
