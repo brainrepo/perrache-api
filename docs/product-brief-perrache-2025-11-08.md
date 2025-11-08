@@ -34,8 +34,7 @@ Two real incidents that crystalize the problem:
 1. **Duplicate Development Waste**
    - Spent weeks building a service
    - Discovered a more complete implementation already existed
-   - Had to drop the entire implementation - **weeks of engineering time wasted**
-   - Someone else had already solved the problem, but discovery failed
+   - Had to drop the entire implementation - **weeks of engineering time wasted** because someone else had already solved the problem, but discovery failed
 
 2. **The 2-Week Search**
    - Needed an existing API for a critical feature
