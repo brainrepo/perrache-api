@@ -1,0 +1,106 @@
+# generated: 2025-11-10
+# project: perrache
+# project_key: perrache
+# tracking_system: file-system
+# story_location: {project-root}/docs/stories
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic exists in epic file but not contexted
+#   - contexted: Next epic tech context created by *epic-tech-context (required)
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - drafted: Story file created in stories folder by *create-story
+#   - ready-for-dev: Draft approved and story context created by *story-ready
+#   - in-progress: Developer actively working on implementation by *dev-story
+#   - review: Implementation complete, ready for review by *code-review
+#   - done: Story completed by *story-done
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - completed: Retrospective has been done by *retrospective
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epics should be 'contexted' before stories can be 'drafted'
+# - SM typically drafts next story ONLY after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', dev reviews, then Dev moves to 'done'
+
+generated: 2025-11-10
+project: perrache
+project_key: perrache
+tracking_system: file-system
+story_location: "{project-root}/docs/stories"
+
+development_status:
+  epic-1: contexted
+  1-1-project-setup-repository-structure: backlog
+  1-2-postgresql-database-with-pgvector-extension: backlog
+  1-3-fastify-backend-api-server-setup: backlog
+  1-4-nextjs-frontend-application-setup: backlog
+  1-5-docker-containerization-deployment-configuration: backlog
+  1-6-api-key-authentication-system: backlog
+  1-7-observability-monitoring-setup: backlog
+  epic-1-retrospective: optional
+
+  epic-2: backlog
+  2-1-database-schema-for-api-catalog: backlog
+  2-2-openapi-spec-validation-service: backlog
+  2-3-webhook-api-endpoint-for-spec-upload: backlog
+  2-4-endpoint-extraction-storage: backlog
+  2-5-multi-environment-version-history-support: backlog
+  2-6-async-processing-queue-for-large-specs: backlog
+  2-7-batch-upload-endpoint-for-ci-cd-optimization: backlog
+  epic-2-retrospective: optional
+
+  epic-3: backlog
+  3-1-schema-flattening-service-for-embedding-generation: backlog
+  3-2-embedding-generation-service-with-dual-embedding-strategy: backlog
+  3-3-semantic-search-api-with-vector-similarity: backlog
+  3-4-related-endpoints-discovery: backlog
+  3-5-api-catalog-browsing-with-filtering: backlog
+  3-6-endpoint-detail-view-api: backlog
+  3-7-search-performance-optimization-with-hnsw-indexing: backlog
+  epic-3-retrospective: optional
+
+  epic-4: backlog
+  4-1-database-schema-for-dependency-tracking: backlog
+  4-2-endpoint-subscription-api: backlog
+  4-3-list-subscriptions-api: backlog
+  4-4-delete-subscription-api: backlog
+  4-5-consumer-visibility-on-endpoint-detail-view: backlog
+  4-6-dependency-graph-visualization-data-api: backlog
+  4-7-impact-analysis-for-breaking-changes: backlog
+  epic-4-retrospective: optional
+
+  epic-5: backlog
+  5-1-database-schema-for-change-tracking: backlog
+  5-2-openapi-spec-diff-service: backlog
+  5-3-breaking-change-detection-integration: backlog
+  5-4-smtp-email-service-configuration: backlog
+  5-5-breaking-change-email-notification-service: backlog
+  5-6-risk-flagging-for-out-of-date-consumers: backlog
+  5-7-change-history-api: backlog
+  epic-5-retrospective: optional
+
+  epic-6: backlog
+  6-1-homepage-with-semantic-search-interface: backlog
+  6-2-search-results-page-with-relevance-ranking: backlog
+  6-3-endpoint-detail-page: backlog
+  6-4-related-endpoints-sidebar: backlog
+  6-5-api-catalog-browse-page: backlog
+  6-6-api-detail-page: backlog
+  6-7-dark-mode-support: backlog
+  epic-6-retrospective: optional
+
+  epic-7: backlog
+  7-1-breaking-change-feed-dashboard: backlog
+  7-2-breaking-change-detail-modal: backlog
+  7-3-my-dependencies-view: backlog
+  7-4-environment-tracking-view: backlog
+  7-5-risk-dashboard-for-governance-teams: backlog
+  7-6-api-landscape-overview-dashboard: backlog
+  7-7-notification-history-status-view: backlog
+  epic-7-retrospective: optional
