@@ -3,7 +3,7 @@
 
   Reusing an API provides the immediate benefit of reducing development effort. Over the long term,
   however, as the requirements of its consumers diverge, the shared API will be pressured to support a
-  growing list of new features. This inevitably causes maintenance costs to skyrocket.
+  growing list of new features. This inevitably causes maintenance costs to skyrocket (coordination cost).
 
   When promoting reuse, it is crucial to consider these future costs by forecasting the API's likely
   evolution. The API must be kept as lean as possible, strictly avoiding any application-specific or
