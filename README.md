@@ -1,5 +1,7 @@
 # Perrache
 
+![Perrache station](docs/assets/perrache.png)
+
 **Open source enterprise API catalog platform for effortless API discovery and governance**
 
 ## The Problem
