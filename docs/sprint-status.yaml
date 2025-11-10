@@ -32,11 +32,11 @@ generated: 2025-11-10
 project: perrache
 project_key: perrache
 tracking_system: file-system
-story_location: "{project-root}/docs/stories"
+story_location: '{project-root}/docs/stories'
 
 development_status:
   epic-1: contexted
-  1-1-project-setup-repository-structure: in-progress
+  1-1-project-setup-repository-structure: complete
   1-2-postgresql-database-with-pgvector-extension: backlog
   1-3-fastify-backend-api-server-setup: backlog
   1-4-nextjs-frontend-application-setup: backlog

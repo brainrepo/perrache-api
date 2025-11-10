@@ -32,12 +32,14 @@ Perrache solves the API discovery crisis through automated ingestion, semantic s
 ## Why Perrache?
 
 **Existing tools fall short:**
+
 - Swagger UI: Lives in each repo, no centralized discovery
 - Postman: Manual collection maintenance, no semantic search
 - Backstage: Requires manual YAML catalog entries teams won't maintain
 - Kong/3scale: Gateway-dependent, runtime overhead, keyword search only
 
 **Perrache is different:**
+
 - Zero manual effort (webhook-first automation)
 - Platform-agnostic (works with any CI/CD)
 - Zero runtime overhead (catalog-only, no gateway)
@@ -46,10 +48,60 @@ Perrache solves the API discovery crisis through automated ingestion, semantic s
 
 ## Quick Start
 
+### Prerequisites
+
+- **Node.js**: 20+ LTS (use [nvm](https://github.com/nvm-sh/nvm) or [fnm](https://github.com/Schniz/fnm))
+- **pnpm**: 8+ (`npm install -g pnpm`)
+- **PostgreSQL**: 15+ with pgvector extension (for local development)
+
+### Installation
+
 ```bash
-# Coming soon - Perrache is in active development
-# Star this repo to follow progress
+# Clone the repository
+git clone https://github.com/brainrepo/perrache.git
+cd perrache
+
+# Use correct Node.js version
+nvm use  # or fnm use
+
+# Install dependencies
+pnpm install
+
+# Set up environment variables
+cp .env.example .env
+# Edit .env with your configuration
+
+# Start development servers (API + Web)
+pnpm dev
 ```
+
+### Available Scripts
+
+- `pnpm dev` - Start all apps in development mode
+- `pnpm build` - Build all apps for production
+- `pnpm test` - Run tests across all workspaces
+- `pnpm lint` - Lint all code
+- `pnpm format` - Format code with Prettier
+
+### Project Structure
+
+```
+perrache/
+├── apps/
+│   ├── api/          # Fastify backend (port 3001)
+│   └── web/          # Next.js frontend (port 3000)
+├── packages/
+│   ├── types/        # Shared TypeScript types
+│   └── config/       # Shared ESLint/Prettier config
+├── docs/             # Project documentation
+└── bmad/             # BMad Method workflows
+```
+
+### Development URLs
+
+- **Frontend**: http://localhost:3000
+- **API**: http://localhost:3001
+- **API Health**: http://localhost:3001/health
 
 ## Integration Example
 
