@@ -67,9 +67,15 @@ nvm use  # or fnm use
 # Install dependencies
 pnpm install
 
+# Start PostgreSQL database with pgvector
+docker compose up -d
+
 # Set up environment variables
 cp .env.example .env
 # Edit .env with your configuration
+
+# Run database migrations
+pnpm db:migrate
 
 # Start development servers (API + Web)
 pnpm dev
@@ -82,6 +88,14 @@ pnpm dev
 - `pnpm test` - Run tests across all workspaces
 - `pnpm lint` - Lint all code
 - `pnpm format` - Format code with Prettier
+- `pnpm db:migrate` - Apply database migrations
+
+### Docker Commands
+
+- `docker compose up -d` - Start PostgreSQL with pgvector in background
+- `docker compose down` - Stop database container
+- `docker compose logs -f postgres` - View database logs
+- `docker compose ps` - Check container status
 
 ### Project Structure
 

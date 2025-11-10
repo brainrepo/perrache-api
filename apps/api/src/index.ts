@@ -1,5 +1,11 @@
+import 'dotenv/config'
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
+import { validateEnvironment } from './lib/env'
+import { DatabaseService } from './lib/db'
+
+// Validate environment variables on startup
+validateEnvironment()
 
 const fastify = Fastify({
   logger: {
@@ -19,12 +25,50 @@ fastify.register(cors, {
   credentials: true
 })
 
-// Health check endpoint
-fastify.get('/health', async () => {
-  return {
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    service: 'perrache-api'
+// Initialize database connection
+DatabaseService.getInstance()
+
+// Health check endpoint with database connectivity
+fastify.get('/health', async (request, reply) => {
+  const timestamp = new Date().toISOString()
+
+  try {
+    // Check database connectivity
+    const dbHealthy = await DatabaseService.healthCheck()
+
+    if (!dbHealthy) {
+      reply.status(503)
+      return {
+        status: 'degraded',
+        timestamp,
+        service: 'perrache-api',
+        database: {
+          status: 'unhealthy',
+          message: 'Database connection failed'
+        }
+      }
+    }
+
+    return {
+      status: 'healthy',
+      timestamp,
+      service: 'perrache-api',
+      database: {
+        status: 'connected',
+        provider: 'postgresql'
+      }
+    }
+  } catch (error) {
+    reply.status(503)
+    return {
+      status: 'unhealthy',
+      timestamp,
+      service: 'perrache-api',
+      database: {
+        status: 'error',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      }
+    }
   }
 })
 
@@ -36,6 +80,24 @@ fastify.get('/', async () => {
     description: 'Automated API catalog with semantic search'
   }
 })
+
+// Graceful shutdown
+const gracefulShutdown = async () => {
+  console.log('\n⏸️  Shutting down gracefully...')
+
+  try {
+    await fastify.close()
+    await DatabaseService.disconnect()
+    console.log('✅ Server and database connections closed')
+    process.exit(0)
+  } catch (err) {
+    console.error('Error during shutdown:', err)
+    process.exit(1)
+  }
+}
+
+process.on('SIGTERM', gracefulShutdown)
+process.on('SIGINT', gracefulShutdown)
 
 // Start server
 const start = async () => {
@@ -49,6 +111,7 @@ const start = async () => {
     console.log(`📊 Health check: http://${host}:${port}/health\n`)
   } catch (err) {
     fastify.log.error(err)
+    await DatabaseService.disconnect()
     process.exit(1)
   }
 }

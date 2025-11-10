@@ -10,20 +10,31 @@
     "start": "node dist/index.js",
     "type-check": "tsc --noEmit",
     "lint": "eslint src --ext .ts",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "db:migrate": "prisma migrate dev",
+    "db:generate": "prisma generate",
+    "db:studio": "prisma studio"
   },
   "dependencies": {
-    "@perrache/types": "workspace:*",
-    "fastify": "^4.25.2",
     "@fastify/cors": "^8.5.0",
     "@fastify/env": "^4.3.0",
+    "@perrache/types": "workspace:*",
+    "@prisma/client": "^6.19.0",
+    "fastify": "^4.25.2",
     "pino": "^8.17.2",
-    "pino-pretty": "^10.3.1"
+    "pino-pretty": "^10.3.1",
+    "prisma": "^6.19.0"
   },
   "devDependencies": {
     "@perrache/config": "workspace:*",
     "@types/node": "^20.11.0",
+    "@vitest/ui": "^4.0.8",
+    "dotenv": "^17.2.3",
     "tsx": "^4.7.0",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "vitest": "^4.0.8"
   }
 }
