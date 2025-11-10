@@ -4,6 +4,7 @@
   "private": true,
   "description": "Perrache API - Fastify backend server",
   "main": "dist/index.js",
+  "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
