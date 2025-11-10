@@ -41,7 +41,13 @@ workflow_status:
   # Phase 2: Solutioning
   create-architecture: docs/architecture.md
   validate-architecture: optional
-  solutioning-gate-check: required
+  create-epics-and-stories: docs/epics.md
+  tech-spec: docs/tech-spec-epic-1.md
+  solutioning-gate-check: 
+    status: complete
+    result: approved
+    output: docs/implementation-readiness-report-2025-11-10.md
+    completed_at: '2025-11-10'
 
   # Phase 3: Implementation
   sprint-planning: required
