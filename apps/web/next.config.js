@@ -2,7 +2,8 @@
 const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ['@perrache/types'],
-  typedRoutes: true
+  typedRoutes: true,
+  output: 'standalone'
 }
 
 module.exports = nextConfig

@@ -89,10 +89,11 @@ export async function buildApp(): Promise<FastifyInstance> {
     )
 
     // Determine error code and status
-    let statusCode = error.statusCode || 500
+    const err = error as any
+    let statusCode = err.statusCode || 500
     let errorCode = 'INTERNAL_ERROR'
 
-    if (error.validation) {
+    if (err.validation) {
       statusCode = 400
       errorCode = 'INVALID_REQUEST'
     } else if (statusCode === 404) {
@@ -107,8 +108,8 @@ export async function buildApp(): Promise<FastifyInstance> {
     reply.status(statusCode).send({
       error: {
         code: errorCode,
-        message: error.message || 'Internal server error',
-        details: error.validation || undefined
+        message: err.message || 'Internal server error',
+        details: err.validation || undefined
       }
     })
   })
