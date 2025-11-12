@@ -5,8 +5,35 @@
  * to ensure type safety across the entire monorepo.
  */
 
-// Placeholder types - will be expanded as features are implemented
+// Error codes enum for standardized error responses
+export enum ErrorCode {
+  INVALID_REQUEST = 'INVALID_REQUEST',
+  UNAUTHORIZED = 'UNAUTHORIZED',
+  NOT_FOUND = 'NOT_FOUND',
+  RATE_LIMIT_EXCEEDED = 'RATE_LIMIT_EXCEEDED',
+  INTERNAL_ERROR = 'INTERNAL_ERROR'
+}
 
+// Error response format
+export interface ErrorResponse {
+  error: {
+    code: ErrorCode | string
+    message: string
+    details?: Record<string, unknown>
+  }
+}
+
+// Health check response
+export interface HealthCheckResponse {
+  status: 'healthy' | 'unhealthy'
+  timestamp: string
+  services: {
+    database: 'healthy' | 'unhealthy' | 'error'
+  }
+  version: string
+}
+
+// Legacy types for backward compatibility
 export interface ApiResponse<T> {
   data?: T
   error?: ApiError

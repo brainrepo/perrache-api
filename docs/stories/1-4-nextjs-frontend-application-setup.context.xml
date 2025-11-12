@@ -1,0 +1,218 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>4</storyId>
+    <title>Next.js Frontend Application Setup</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-11</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/1-4-nextjs-frontend-application-setup.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>a frontend developer</asA>
+    <iWant>Next.js application configured with TypeScript, Tailwind CSS, and API client setup</iWant>
+    <soThat>we have a modern, type-safe frontend foundation</soThat>
+    <tasks>
+      <task id="1" title="Next.js Application Setup">
+        <subtask>Create `apps/web` workspace with Next.js 14+ using App Router</subtask>
+        <subtask>Configure TypeScript with strict mode</subtask>
+        <subtask>Initialize folder structure per architecture.md</subtask>
+      </task>
+      <task id="2" title="Tailwind CSS Configuration">
+        <subtask>Configure Tailwind CSS with dark mode support</subtask>
+        <subtask>Install next-themes for theme management</subtask>
+        <subtask>Create global styles</subtask>
+      </task>
+      <task id="3" title="API Client Library">
+        <subtask>Create API client wrapper with type safety</subtask>
+        <subtask>Set up environment variables</subtask>
+        <subtask>Create error handling utilities</subtask>
+      </task>
+      <task id="4" title="Layout &amp; Navigation Components">
+        <subtask>Create root layout component</subtask>
+        <subtask>Create navigation header component</subtask>
+        <subtask>Create error boundary component</subtask>
+      </task>
+      <task id="5" title="Homepage Implementation">
+        <subtask>Create homepage component</subtask>
+        <subtask>Test backend API connectivity</subtask>
+      </task>
+      <task id="6" title="shadcn/ui Base Components (Optional)">
+        <subtask>Initialize shadcn/ui</subtask>
+        <subtask>Create utility helper</subtask>
+        <subtask>Test shadcn components</subtask>
+      </task>
+      <task id="7" title="Development Environment">
+        <subtask>Configure package.json scripts</subtask>
+        <subtask>Update Turborepo configuration</subtask>
+        <subtask>Test hot reload functionality</subtask>
+      </task>
+      <task id="8" title="Testing &amp; Validation">
+        <subtask>Verify all acceptance criteria</subtask>
+        <subtask>Test cross-browser compatibility</subtask>
+        <subtask>Test responsive design</subtask>
+        <subtask>Verify CORS configuration</subtask>
+      </task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+      <criterion>
+        **Given** the backend API server is running
+        **When** the frontend application is initialized
+        **Then** Next.js 14+ app directory structure is configured
+      </criterion>
+      <criterion>
+        **And** TypeScript is enabled with strict mode
+      </criterion>
+      <criterion>
+        **And** Tailwind CSS is installed and configured with dark mode support
+      </criterion>
+      <criterion>
+        **And** API client library is configured to connect to backend (axios or fetch wrapper)
+      </criterion>
+      <criterion>
+        **And** Environment variable configuration for API base URL (NEXT_PUBLIC_API_URL)
+      </criterion>
+      <criterion>
+        **And** Layout component includes responsive navigation structure
+      </criterion>
+      <criterion>
+        **And** Error boundary components handle runtime errors gracefully
+      </criterion>
+      <criterion>
+        **And** developers can run `pnpm run dev` and see a functional homepage at localhost:3000
+      </criterion>
+      <criterion>
+        **And** API calls to backend health endpoint succeed
+      </criterion>
+    </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <artifact>
+        <path>docs/architecture.md</path>
+        <title>Architecture</title>
+        <section>Project Structure</section>
+        <snippet>
+          apps/web/                          # Next.js frontend
+          ├── src/
+          │   ├── app/                  # App Router
+          │   │   ├── (routes)/         # UI pages
+          │   │   │   ├── page.tsx      # Homepage (search)
+          │   │   │   ├── catalog/      # API catalog browser
+          │   │   │   ├── api/          # API detail pages
+          │   │   │   └── changes/      # Breaking change dashboard
+          │   │   ├── layout.tsx
+          │   │   └── globals.css
+          │   ├── components/           # React components
+          │   │   ├── search/
+          │   │   ├── catalog/
+          │   │   └── ui/               # shadcn/ui components
+          │   └── lib/                  # Client utilities
+          │       ├── api-client.ts     # API fetch functions
+          │       └── utils.ts
+          ├── public/
+          ├── package.json
+          └── tsconfig.json
+        </snippet>
+      </artifact>
+      <artifact>
+        <path>docs/tech-spec-epic-1.md</path>
+        <title>Epic Technical Specification: Foundation &amp; Infrastructure</title>
+        <section>Frontend Application</section>
+        <snippet>
+          - Next.js 15 with App Router (not Pages Router)
+          - TypeScript strict mode
+          - Tailwind CSS for styling with dark mode support
+          - API client library connecting to Fastify backend
+          - Responsive layout with navigation structure
+        </snippet>
+      </artifact>
+      <artifact>
+        <path>docs/epics.md</path>
+        <title>Perrache - Epic Breakdown</title>
+        <section>Story 1.4: Next.js Frontend Application Setup</section>
+        <snippet>
+          As a frontend developer,
+          I want Next.js application configured with TypeScript, Tailwind CSS, and API client setup,
+          So that we have a modern, type-safe frontend foundation.
+        </snippet>
+      </artifact>
+    </docs>
+    <code>
+      <artifact>
+        <path>packages/types/src/index.ts</path>
+        <kind>types</kind>
+        <symbol>HealthCheckResponse</symbol>
+        <lines>23-30</lines>
+        <reason>Shared type for API health check response, ensuring type safety between frontend and backend.</reason>
+      </artifact>
+      <artifact>
+        <path>packages/types/src/index.ts</path>
+        <kind>types</kind>
+        <symbol>ErrorResponse</symbol>
+        <lines>13-19</lines>
+        <reason>Standardized error response format for all API calls.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <dependency>
+        <name>next</name>
+        <version>^15.0.0</version>
+        <reason>Core frontend framework for the web application.</reason>
+      </dependency>
+      <dependency>
+        <name>react</name>
+        <version>^19.0.0</version>
+        <reason>JavaScript library for building user interfaces.</reason>
+      </dependency>
+      <dependency>
+        <name>tailwindcss</name>
+        <version>^3.4.1</version>
+        <reason>Utility-first CSS framework for styling.</reason>
+      </dependency>
+      <dependency>
+        <name>@perrache/types</name>
+        <version>workspace:*</version>
+        <reason>Shared TypeScript types for API communication.</reason>
+      </dependency>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+      <constraint>
+        <type>CORS</type>
+        <description>The backend API server is configured to accept requests from 'http://localhost:3000'. The frontend application must run on this port for API calls to succeed.</description>
+        <source>apps/api/src/app.ts</source>
+      </constraint>
+      <constraint>
+        <type>Environment Variable</type>
+        <description>The frontend must use the NEXT_PUBLIC_API_URL environment variable to configure the backend API base URL.</description>
+        <source>docs/stories/1-4-nextjs-frontend-application-setup.md</source>
+      </constraint>
+    </constraints>
+  <interfaces>
+      <interface>
+        <name>Health Check</name>
+        <kind>REST endpoint</kind>
+        <signature>GET /health</signature>
+        <path>apps/api/src/app.ts</path>
+      </interface>
+    </interfaces>
+  <tests>
+      <standards>
+        The project uses Vitest for unit and integration tests and Playwright for end-to-end tests. The testing strategy follows a test pyramid approach, with a majority of tests being unit tests. Pre-commit hooks and a CI pipeline are used to ensure code quality.
+      </standards>
+      <locations>
+        - `apps/web/test/unit/`
+        - `tests/e2e/`
+      </locations>
+      <ideas>
+        - Unit test the API client to ensure it correctly handles success and error responses.
+        - Unit test the navigation component to ensure it renders correctly.
+        - E2E test the homepage to verify that it loads and successfully calls the backend health check endpoint.
+      </ideas>
+    </tests>
+</story-context>

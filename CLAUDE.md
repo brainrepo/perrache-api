@@ -1,1 +1,2 @@
 - you can use mcp for searching technology tools
+- use always the latest stable versions

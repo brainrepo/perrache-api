@@ -1,92 +1,19 @@
 import 'dotenv/config'
-import Fastify from 'fastify'
-import cors from '@fastify/cors'
-import { validateEnvironment } from './lib/env'
-import { DatabaseService } from './lib/db'
+import { buildApp } from './app.js'
+import { DatabaseService } from './lib/db.js'
+import { validateEnvironment } from './lib/env.js'
 
-// Validate environment variables on startup
-validateEnvironment()
+// Validate environment on startup
+const env = validateEnvironment()
 
-const fastify = Fastify({
-  logger: {
-    transport: {
-      target: 'pino-pretty',
-      options: {
-        translateTime: 'HH:MM:ss Z',
-        ignore: 'pid,hostname'
-      }
-    }
-  }
-})
-
-// Register CORS
-fastify.register(cors, {
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true
-})
-
-// Initialize database connection
-DatabaseService.getInstance()
-
-// Health check endpoint with database connectivity
-fastify.get('/health', async (request, reply) => {
-  const timestamp = new Date().toISOString()
+// Graceful shutdown handler
+const gracefulShutdown = async (signal: string) => {
+  console.log(`\n⏸️  Received ${signal}, shutting down gracefully...`)
 
   try {
-    // Check database connectivity
-    const dbHealthy = await DatabaseService.healthCheck()
-
-    if (!dbHealthy) {
-      reply.status(503)
-      return {
-        status: 'degraded',
-        timestamp,
-        service: 'perrache-api',
-        database: {
-          status: 'unhealthy',
-          message: 'Database connection failed'
-        }
-      }
+    if (app) {
+      await app.close()
     }
-
-    return {
-      status: 'healthy',
-      timestamp,
-      service: 'perrache-api',
-      database: {
-        status: 'connected',
-        provider: 'postgresql'
-      }
-    }
-  } catch (error) {
-    reply.status(503)
-    return {
-      status: 'unhealthy',
-      timestamp,
-      service: 'perrache-api',
-      database: {
-        status: 'error',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      }
-    }
-  }
-})
-
-// Root endpoint
-fastify.get('/', async () => {
-  return {
-    name: 'Perrache API',
-    version: '0.1.0',
-    description: 'Automated API catalog with semantic search'
-  }
-})
-
-// Graceful shutdown
-const gracefulShutdown = async () => {
-  console.log('\n⏸️  Shutting down gracefully...')
-
-  try {
-    await fastify.close()
     await DatabaseService.disconnect()
     console.log('✅ Server and database connections closed')
     process.exit(0)
@@ -96,21 +23,33 @@ const gracefulShutdown = async () => {
   }
 }
 
-process.on('SIGTERM', gracefulShutdown)
-process.on('SIGINT', gracefulShutdown)
+// Register shutdown handlers
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'))
+process.on('SIGINT', () => gracefulShutdown('SIGINT'))
 
 // Start server
+let app: Awaited<ReturnType<typeof buildApp>> | null = null
+
 const start = async () => {
   try {
-    const port = parseInt(process.env.API_PORT || '3001', 10)
-    const host = process.env.API_HOST || '0.0.0.0'
+    // Build Fastify app
+    app = await buildApp()
 
-    await fastify.listen({ port, host })
+    // Start listening
+    const port = parseInt(env.PORT || '3001', 10)
+    const host = env.HOST || '0.0.0.0'
+
+    await app.listen({ port, host })
 
     console.log(`\n🚀 Perrache API server ready at http://${host}:${port}`)
-    console.log(`📊 Health check: http://${host}:${port}/health\n`)
+    console.log(`📊 Health check: http://${host}:${port}/health`)
+    console.log(`📚 API Documentation: http://${host}:${port}/docs\n`)
   } catch (err) {
-    fastify.log.error(err)
+    if (app) {
+      app.log.error(err)
+    } else {
+      console.error('Startup error:', err)
+    }
     await DatabaseService.disconnect()
     process.exit(1)
   }

@@ -1,4 +1,8 @@
-# generated: 2025-11-10
+# Sprint Status Template
+# This tracks progress through BMM methodology phases
+# Phase 3/4 (Implementation) is tracked separately in sprint-status.yaml
+
+# generated: 2025-11-11
 # project: perrache
 # project_key: perrache
 # tracking_system: file-system
@@ -8,27 +12,28 @@
 # ==================
 # Epic Status:
 #   - backlog: Epic exists in epic file but not contexted
-#   - contexted: Next epic tech context created by *epic-tech-context (required)
+#   - contexted: Epic tech context created (required before drafting stories)
 #
 # Story Status:
 #   - backlog: Story only exists in epic file
-#   - drafted: Story file created in stories folder by *create-story
-#   - ready-for-dev: Draft approved and story context created by *story-ready
-#   - in-progress: Developer actively working on implementation by *dev-story
-#   - review: Implementation complete, ready for review by *code-review
-#   - done: Story completed by *story-done
+#   - drafted: Story file created in stories folder
+#   - ready-for-dev: Draft approved and story context created
+#   - in-progress: Developer actively working on implementation
+#   - review: Under SM review (via code-review workflow)
+#   - done: Story completed
 #
 # Retrospective Status:
 #   - optional: Can be completed but not required
-#   - completed: Retrospective has been done by *retrospective
+#   - completed: Retrospective has been done
 #
 # WORKFLOW NOTES:
 # ===============
 # - Epics should be 'contexted' before stories can be 'drafted'
-# - SM typically drafts next story ONLY after previous one is 'done' to incorporate learnings
-# - Dev moves story to 'review', dev reviews, then Dev moves to 'done'
+# - Stories can be worked in parallel if team capacity allows
+# - SM typically drafts next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', SM reviews, then Dev moves to 'done'
 
-generated: 2025-11-10
+generated: 2025-11-11
 project: perrache
 project_key: perrache
 tracking_system: file-system
@@ -37,9 +42,9 @@ story_location: '{project-root}/docs/stories'
 development_status:
   epic-1: contexted
   1-1-project-setup-repository-structure: complete
-  1-2-postgresql-database-with-pgvector-extension: review
-  1-3-fastify-backend-api-server-setup: backlog
-  1-4-nextjs-frontend-application-setup: backlog
+  1-2-postgresql-database-with-pgvector-extension: done
+  1-3-fastify-backend-api-server-setup: done
+  1-4-nextjs-frontend-application-setup: drafted
   1-5-docker-containerization-deployment-configuration: backlog
   1-6-api-key-authentication-system: backlog
   1-7-observability-monitoring-setup: backlog

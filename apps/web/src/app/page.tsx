@@ -1,24 +1,40 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { getHealth } from '@/lib/api-client'
+import type { HealthCheckResponse } from '@perrache/types'
+
 export default function Home() {
+  const [health, setHealth] = useState<HealthCheckResponse | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    getHealth()
+      .then(setHealth)
+      .catch(console.error)
+      .finally(() => setLoading(false))
+  }, [])
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-24">
+    <main className="container mx-auto flex min-h-screen flex-col items-center justify-center p-24">
       <div className="text-center">
         <h1 className="text-6xl font-bold mb-4">Perrache</h1>
-        <p className="text-xl text-gray-600 dark:text-gray-400 mb-8">
+        <p className="text-xl text-muted-foreground mb-8">
           Automated API catalog with semantic search
         </p>
         <div className="flex gap-4 justify-center">
-          <a
-            href="/api/health"
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Check API Health
-          </a>
-          <a
-            href="/docs"
-            className="px-6 py-3 bg-gray-200 dark:bg-gray-800 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors"
-          >
-            Documentation
-          </a>
+          {loading ? (
+            <p>Checking API status...</p>
+          ) : health ? (
+            <p>
+              API Status:{' '}
+              <span className={health.status === 'healthy' ? 'text-green-500' : 'text-red-500'}>
+                {health.status}
+              </span>
+            </p>
+          ) : (
+            <p className="text-red-500">Could not connect to API</p>
+          )}
         </div>
       </div>
     </main>

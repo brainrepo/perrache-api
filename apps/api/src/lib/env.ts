@@ -3,13 +3,14 @@
  * Ensures required environment variables are set before the application starts
  */
 
-interface EnvironmentConfig {
+export interface EnvironmentConfig {
   DATABASE_URL: string
   DB_POOL_SIZE?: string
-  NODE_ENV?: string
-  API_PORT?: string
-  API_HOST?: string
-  FRONTEND_URL?: string
+  NODE_ENV: string
+  PORT?: string
+  HOST?: string
+  CORS_ORIGIN?: string
+  LOG_LEVEL?: string
 }
 
 const requiredEnvVars = ['DATABASE_URL'] as const
@@ -33,8 +34,9 @@ export function validateEnvironment(): EnvironmentConfig {
     DATABASE_URL: process.env.DATABASE_URL!,
     DB_POOL_SIZE: process.env.DB_POOL_SIZE,
     NODE_ENV: process.env.NODE_ENV || 'development',
-    API_PORT: process.env.API_PORT,
-    API_HOST: process.env.API_HOST,
-    FRONTEND_URL: process.env.FRONTEND_URL
+    PORT: process.env.PORT,
+    HOST: process.env.HOST,
+    CORS_ORIGIN: process.env.CORS_ORIGIN,
+    LOG_LEVEL: process.env.LOG_LEVEL
   }
 }
