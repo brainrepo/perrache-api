@@ -4,7 +4,7 @@
 **Story ID:** 1.4
 **Story Key:** 1-4-nextjs-frontend-application-setup
 **Created:** 2025-11-11
-**Status:** drafted
+Status: ready-for-dev
 
 ---
 
@@ -217,10 +217,10 @@ Per `docs/architecture.md`:
 
 ### Task 1: Next.js Application Setup
 
-- [ ] Create `apps/web` workspace with Next.js 14+ using App Router
-  - [ ] Run `pnpm create next-app@latest web --typescript --tailwind --app --src-dir` in apps/ directory
-  - [ ] Configure as Turborepo workspace in root `package.json`
-  - [ ] Add `@perrache/types` dependency to `apps/web/package.json`
+- [x] Create `apps/web` workspace with Next.js 14+ using App Router
+  - [x] Run `pnpm create next-app@latest web --typescript --tailwind --app --src-dir` in apps/ directory
+  - [x] Configure as Turborepo workspace in root `package.json`
+  - [x] Add `@perrache/types` dependency to `apps/web/package.json`
 - [ ] Configure TypeScript with strict mode
   - [ ] Enable strict mode in `tsconfig.json`
   - [ ] Configure path aliases: `@/*` → `./src/*`
@@ -232,66 +232,66 @@ Per `docs/architecture.md`:
 
 ### Task 2: Tailwind CSS Configuration
 
-- [ ] Configure Tailwind CSS with dark mode support
-  - [ ] Enable dark mode with class strategy in `tailwind.config.js`
-  - [ ] Configure custom color palette (optional)
-  - [ ] Set up content paths for Tailwind purging
-- [ ] Install next-themes for theme management
-  - [ ] Add `next-themes` package
-  - [ ] Create theme provider component
-  - [ ] Wrap app with ThemeProvider in root layout
-- [ ] Create global styles
-  - [ ] Set up `src/app/globals.css` with Tailwind imports
-  - [ ] Add base styles for light and dark themes
-  - [ ] Test dark mode toggle functionality
+- [x] Configure Tailwind CSS with dark mode support
+  - [x] Enable dark mode with class strategy in `tailwind.config.js`
+  - [x] Configure custom color palette (optional)
+  - [x] Set up content paths for Tailwind purging
+- [x] Install next-themes for theme management
+  - [x] Add `next-themes` package
+  - [x] Create theme provider component
+  - [x] Wrap app with ThemeProvider in root layout
+- [x] Create global styles
+  - [x] Set up `src/app/globals.css` with Tailwind imports
+  - [x] Add base styles for light and dark themes
+  - [x] Test dark mode toggle functionality
 
 ### Task 3: API Client Library
 
-- [ ] Create API client wrapper with type safety
-  - [ ] Create `src/lib/api-client.ts` file
-  - [ ] Import types from `@perrache/types`
-  - [ ] Implement `getHealth()` function using native fetch
-  - [ ] Configure base URL from environment variable
-- [ ] Set up environment variables
-  - [ ] Create `.env.example` with `NEXT_PUBLIC_API_URL`
-  - [ ] Create `.env.local` with `NEXT_PUBLIC_API_URL=http://localhost:3001`
-  - [ ] Add `.env.local` to `.gitignore`
-- [ ] Create error handling utilities
-  - [ ] Handle network errors gracefully
-  - [ ] Parse `ErrorResponse` type from backend
-  - [ ] Add retry logic for transient failures (optional)
+- [x] Create API client wrapper with type safety
+  - [x] Create `src/lib/api-client.ts` file
+  - [x] Import types from `@perrache/types`
+  - [x] Implement `getHealth()` function using native fetch
+  - [x] Configure base URL from environment variable
+- [x] Set up environment variables
+  - [x] Create `.env.example` with `NEXT_PUBLIC_API_URL`
+  - [x] Create `.env.local` with `NEXT_PUBLIC_API_URL=http://localhost:3001`
+  - [x] Add `.env.local` to `.gitignore`
+- [x] Create error handling utilities
+  - [x] Handle network errors gracefully
+  - [x] Parse `ErrorResponse` type from backend
+  - [x] Add retry logic for transient failures (optional)
 
 ### Task 4: Layout & Navigation Components
 
-- [ ] Create root layout component
-  - [ ] Create `src/app/layout.tsx` with HTML structure
-  - [ ] Include metadata (title, description)
-  - [ ] Import global styles
-  - [ ] Add ThemeProvider wrapper
-- [ ] Create navigation header component
-  - [ ] Create `src/components/nav-header.tsx`
-  - [ ] Add logo and app title
-  - [ ] Add navigation links (Search, Catalog, Changes - placeholder)
-  - [ ] Add dark mode toggle button
-  - [ ] Make responsive (mobile menu)
-- [ ] Create error boundary component
-  - [ ] Create `src/app/error.tsx` error boundary
-  - [ ] Display user-friendly error messages
-  - [ ] Include "Reload" button
-  - [ ] Log errors to console (future: error tracking service)
+- [x] Create root layout component
+  - [x] Create `src/app/layout.tsx` with HTML structure
+  - [x] Include metadata (title, description)
+  - [x] Import global styles
+  - [x] Add ThemeProvider wrapper
+- [x] Create navigation header component
+  - [x] Create `src/components/nav-header.tsx`
+  - [x] Add logo and app title
+  - [x] Add navigation links (Search, Catalog, Changes - placeholder)
+  - [x] Add dark mode toggle button
+  - [x] Make responsive (mobile menu)
+- [x] Create error boundary component
+  - [x] Create `src/app/error.tsx` error boundary
+  - [x] Display user-friendly error messages
+  - [x] Include "Reload" button
+  - [x] Log errors to console (future: error tracking service)
 
 ### Task 5: Homepage Implementation
 
-- [ ] Create homepage component
-  - [ ] Create `src/app/page.tsx`
-  - [ ] Add welcome message and app description
-  - [ ] Display API health status (call backend)
-  - [ ] Show loading state while fetching
-- [ ] Test backend API connectivity
-  - [ ] Call `getHealth()` from API client
-  - [ ] Display health check result
-  - [ ] Handle connection errors gracefully
-  - [ ] Show database status
+- [x] Create homepage component
+  - [x] Create `src/app/page.tsx`
+  - [x] Add welcome message and app description
+  - [x] Display API health status (call backend)
+  - [x] Show loading state while fetching
+- [x] Test backend API connectivity
+  - [x] Call `getHealth()` from API client
+  - [x] Display health check result
+  - [x] Handle connection errors gracefully
+  - [x] Show database status
 
 ### Task 6: shadcn/ui Base Components (Optional)
 
@@ -372,7 +372,7 @@ Per `docs/architecture.md`:
 
 ### Context Reference
 
-<!-- Path(s) to story context XML will be added here by context workflow -->
+- docs/stories/1-4-nextjs-frontend-application-setup.context.xml
 
 ### Agent Model Used
 

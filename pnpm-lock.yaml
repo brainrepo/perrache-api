@@ -99,15 +99,30 @@ importers:
         specifier: workspace:*
         version: link:../../packages/types
       next:
+      class-variance-authority:
+        specifier: ^0.7.1
+        version: 0.7.1
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
+      lucide-react:
+        specifier: ^0.553.0
+        version: 0.553.0(react@19.2.0)
         specifier: ^15.0.0
         version: 15.5.6(react-dom@19.2.0)(react@19.2.0)
       react:
+      next-themes:
+        specifier: ^0.4.6
+        version: 0.4.6(react-dom@19.2.0)(react@19.2.0)
         specifier: ^19.0.0
         version: 19.2.0
       react-dom:
         specifier: ^19.0.0
         version: 19.2.0(react@19.2.0)
     devDependencies:
+      tailwind-merge:
+        specifier: ^3.4.0
+        version: 3.4.0
       '@perrache/config':
         specifier: workspace:*
         version: link:../../packages/config
@@ -2114,6 +2129,12 @@ packages:
   /@unrs/resolver-binding-win32-ia32-msvc@1.11.1:
     resolution:
       {
+  /class-variance-authority@0.7.1:
+    resolution: {integrity: sha512-Ka+9Trutv7G8M6WT6SeiRWz792K5qEqIGEGzXKhAE6xOWAY6pPH8U+9IY3oCMv6kqTmLsv7Xh/2w2RigkePMsg==}
+    dependencies:
+      clsx: 2.1.1
+    dev: false
+
         integrity: sha512-DCEI6t5i1NmAZp6pFonpD5m7i6aFrpofcp4LA2i8IIq60Jyo28hamKBxNrZcyOwVOZkgsRp9O2sXWBWP8MnvIQ==
       }
     cpu: [ia32]
@@ -2132,6 +2153,11 @@ packages:
     requiresBuild: true
     dev: true
     optional: true
+
+  /clsx@2.1.1:
+    resolution: {integrity: sha512-eYm0QWBtUrBWZWG0d386OGAw16Z995PiOVo2B7bjWSbHedGl5e0ZWaq65kOGgUSNesEIDkB9ISbTg/JK9dhCZA==}
+    engines: {node: '>=6'}
+    dev: false
 
   /@vitest/expect@4.0.8:
     resolution:
@@ -3878,6 +3904,14 @@ packages:
 
   /execa@8.0.1:
     resolution:
+  /lucide-react@0.553.0(react@19.2.0):
+    resolution: {integrity: sha512-BRgX5zrWmNy/lkVAe0dXBgd7XQdZ3HTf+Hwe3c9WK6dqgnj9h+hxV+MDncM88xDWlCq27+TKvHGE70ViODNILw==}
+    peerDependencies:
+      react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
+    dependencies:
+      react: 19.2.0
+    dev: false
+
       {
         integrity: sha512-VyhnebXciFV2DESc+p6B+y0LjSm0krU4OgJN44qFAhBY0TJ+1V61tYD2+wHusZ6F9n5K+vl8k0sTy7PEfV4qpg==
       }
@@ -3987,6 +4021,16 @@ packages:
       json-schema-ref-resolver: 3.0.0
       rfdc: 1.4.1
     dev: false
+  /next-themes@0.4.6(react-dom@19.2.0)(react@19.2.0):
+    resolution: {integrity: sha512-pZvgD5L0IEvX5/9GWyHMf3m8BKiVQwsCMHfoFosXtXBMnaS0ZnIJ9ST4b4NqLVKDEm8QBxoNNGNaBv2JNF6XNA==}
+    peerDependencies:
+      react: ^16.8 || ^17 || ^18 || ^19 || ^19.0.0-rc
+      react-dom: ^16.8 || ^17 || ^18 || ^19 || ^19.0.0-rc
+    dependencies:
+      react: 19.2.0
+      react-dom: 19.2.0(react@19.2.0)
+    dev: false
+
 
   /fast-levenshtein@2.0.6:
     resolution:
@@ -5176,6 +5220,10 @@ packages:
     resolution:
       {
         integrity: sha512-YUSOLq9VeRNAo/CTaVmhGDKG+LBtA8KF1X4K5+ykMSwWST1vDxJRB2kv2COgLb1fvpCo+A/y9A0G0znNVmdx4w==
+  /tailwind-merge@3.4.0:
+    resolution: {integrity: sha512-uSaO4gnW+b3Y2aWoWfFpX62vn2sR3skfhbjsEnaBI81WD1wBLlHZe5sWf0AqjksNdYTbGBEd0UasQMT3SNV15g==}
+    dev: false
+
       }
     engines: { node: '>=18.12.0' }
     hasBin: true
