@@ -5,7 +5,7 @@
 **Story Key:** 1-4-nextjs-frontend-application-setup
 **Created:** 2025-11-11
 **Completed:** 2025-11-12
-Status: ready-for-review
+Status: done
 
 ---
 
@@ -378,11 +378,17 @@ claude-sonnet-4-5-20250929
 
 N/A
 
+### Completion Notes
+
+**Completed:** 2025-11-15
+**Definition of Done:** All acceptance criteria met, code reviewed, tests passing
+
 ### Completion Notes List
 
 **Story Completed Successfully on 2025-11-12**
 
 All acceptance criteria met:
+
 - ✅ Next.js 15.5.6 with App Router configured
 - ✅ TypeScript strict mode enabled with no errors
 - ✅ Tailwind CSS 4.1.17 (latest) with dark mode support
@@ -400,7 +406,7 @@ All acceptance criteria met:
 
 1. **TypeScript Configuration:**
    - Strict mode enabled in tsconfig.json
-   - Path aliases configured (@/* → ./src/*)
+   - Path aliases configured (@/_ → ./src/_)
    - Shared types imported from @perrache/types package
 
 2. **Tailwind CSS & Theming:**

@@ -1,0 +1,280 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>5</storyId>
+    <title>Docker Containerization &amp; Deployment Configuration</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-15</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/1-5-docker-containerization-deployment-configuration.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>DevOps engineer</asA>
+    <iWant>Docker containers for backend, frontend, and database with docker-compose orchestration</iWant>
+    <soThat>the application can be deployed consistently across environments</soThat>
+    <tasks>
+      <task id="1" name="Docker Configuration Files">
+        <subtask>Create .dockerignore file</subtask>
+        <subtask>Create docker/ directory structure</subtask>
+        <subtask>Update .env.example with Docker-specific variables</subtask>
+      </task>
+      <task id="2" name="Database Container Setup">
+        <subtask>Create docker/init.sql initialization script</subtask>
+        <subtask>Configure PostgreSQL service in docker-compose.yml</subtask>
+        <subtask>Test database persistence</subtask>
+      </task>
+      <task id="3" name="Backend (API) Dockerfile">
+        <subtask>Create multi-stage Dockerfile.api</subtask>
+        <subtask>Configure build for monorepo structure</subtask>
+        <subtask>Optimize image size (target &lt;500MB)</subtask>
+        <subtask>Include Prisma migrations</subtask>
+      </task>
+      <task id="4" name="Frontend (Web) Dockerfile">
+        <subtask>Create multi-stage Dockerfile.web</subtask>
+        <subtask>Configure Next.js for standalone output</subtask>
+        <subtask>Optimize image size (target &lt;200MB)</subtask>
+        <subtask>Configure environment variables</subtask>
+      </task>
+      <task id="5" name="Docker Compose Orchestration">
+        <subtask>Create docker/docker-compose.yml</subtask>
+        <subtask>Configure networking</subtask>
+        <subtask>Configure health checks for all services</subtask>
+        <subtask>Configure environment variables</subtask>
+        <subtask>Configure volumes</subtask>
+      </task>
+      <task id="6" name="Migration Automation">
+        <subtask>Configure automatic database migrations on API startup</subtask>
+        <subtask>Update Dockerfile.api to run migrations</subtask>
+        <subtask>Test migration execution</subtask>
+      </task>
+      <task id="7" name="Build and Size Optimization">
+        <subtask>Build and test backend image (&lt;500MB)</subtask>
+        <subtask>Build and test frontend image (&lt;200MB)</subtask>
+        <subtask>Optimize if size targets not met</subtask>
+      </task>
+      <task id="8" name="Integration Testing">
+        <subtask>Test full stack with docker-compose</subtask>
+        <subtask>Test data persistence</subtask>
+        <subtask>Test service dependencies</subtask>
+        <subtask>Verify environment variables</subtask>
+      </task>
+      <task id="9" name="Documentation and Cleanup">
+        <subtask>Update project README with Docker instructions</subtask>
+        <subtask>Document deployment workflow</subtask>
+        <subtask>Create docker-specific README</subtask>
+      </task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC1">Dockerfile exists for backend with multi-stage build (build + production stages)</criterion>
+    <criterion id="AC2">Dockerfile exists for frontend with multi-stage build optimized for Next.js</criterion>
+    <criterion id="AC3">docker-compose.yml orchestrates all services (backend, frontend, postgres)</criterion>
+    <criterion id="AC4">Environment variables are configurable via .env file</criterion>
+    <criterion id="AC5">Database migrations run automatically on container startup</criterion>
+    <criterion id="AC6">Health checks are configured for all services in docker-compose</criterion>
+    <criterion id="AC7">Volume mounts preserve database data between restarts</criterion>
+    <criterion id="AC8">Developers can run docker-compose up and access the full application</criterion>
+    <criterion id="AC9">Production build creates optimized images &lt;500MB (backend) and &lt;200MB (frontend)</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Project Architecture</title>
+        <section>Deployment Architecture</section>
+        <snippet>Defines monorepo structure with docker/ directory containing docker-compose.yml, Dockerfile.api, Dockerfile.web, and init.sql. Specifies service ports: Backend (3001), Frontend (3000), Database (5432).</snippet>
+      </doc>
+      <doc>
+        <path>docs/tech-spec-epic-1.md</path>
+        <title>Epic 1 Technical Specification</title>
+        <section>Docker Deployment</section>
+        <snippet>Provides detailed Docker Compose configuration examples with health checks, multi-stage Dockerfile patterns for API and frontend, database initialization script for pgvector extension, and environment variable templates.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic Definitions</title>
+        <section>Story 1.5</section>
+        <snippet>DevOps engineer wants Docker containers for backend, frontend, and database with docker-compose orchestration so the application can be deployed consistently across environments.</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/1-4-nextjs-frontend-application-setup.md</path>
+        <title>Previous Story (1.4)</title>
+        <section>Dev Agent Record</section>
+        <snippet>Next.js 15.5.6 configured with output: standalone for optimized Docker builds. Frontend runs on port 3000, API client configured for localhost:3001. TypeScript strict mode enabled.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>docker-compose.yml</path>
+        <kind>orchestration</kind>
+        <symbol>services: database, api, web</symbol>
+        <lines>full file</lines>
+        <reason>Existing Docker Compose setup with PostgreSQL (pgvector), API, and Web services including health checks and networking</reason>
+      </artifact>
+      <artifact>
+        <path>apps/api/Dockerfile</path>
+        <kind>dockerfile</kind>
+        <symbol>multi-stage build</symbol>
+        <lines>full file</lines>
+        <reason>Existing API Dockerfile with builder and production stages, non-root user, dumb-init signal handling</reason>
+      </artifact>
+      <artifact>
+        <path>apps/web/Dockerfile</path>
+        <kind>dockerfile</kind>
+        <symbol>multi-stage build</symbol>
+        <lines>full file</lines>
+        <reason>Existing Web Dockerfile with deps, builder, runner stages for Next.js standalone output</reason>
+      </artifact>
+      <artifact>
+        <path>apps/api/docker-entrypoint.sh</path>
+        <kind>script</kind>
+        <symbol>entrypoint</symbol>
+        <lines>full file</lines>
+        <reason>Database migration entry point script that runs prisma migrate deploy on container startup</reason>
+      </artifact>
+      <artifact>
+        <path>apps/api/src/app.ts</path>
+        <kind>service</kind>
+        <symbol>GET /health</symbol>
+        <lines>128-167</lines>
+        <reason>Health check endpoint returning JSON with status, timestamp, services health, and version</reason>
+      </artifact>
+      <artifact>
+        <path>apps/api/prisma/schema.prisma</path>
+        <kind>schema</kind>
+        <symbol>generator, datasource, extensions</symbol>
+        <lines>full file</lines>
+        <reason>Prisma schema with PostgreSQL provider and pgvector extension configuration</reason>
+      </artifact>
+      <artifact>
+        <path>apps/web/next.config.js</path>
+        <kind>config</kind>
+        <symbol>output: standalone</symbol>
+        <lines>full file</lines>
+        <reason>Next.js configuration with standalone output mode for optimized Docker builds</reason>
+      </artifact>
+      <artifact>
+        <path>turbo.json</path>
+        <kind>config</kind>
+        <symbol>pipeline</symbol>
+        <lines>full file</lines>
+        <reason>Turborepo build pipeline configuration with dependency tracking and caching</reason>
+      </artifact>
+      <artifact>
+        <path>pnpm-workspace.yaml</path>
+        <kind>config</kind>
+        <symbol>packages</symbol>
+        <lines>full file</lines>
+        <reason>pnpm workspace configuration defining monorepo structure</reason>
+      </artifact>
+      <artifact>
+        <path>.env.docker.example</path>
+        <kind>template</kind>
+        <symbol>environment variables</symbol>
+        <lines>full file</lines>
+        <reason>Docker environment template with database, API, and web configuration variables</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <node>
+        <package name="node" version="&gt;=20.0.0" />
+        <package name="pnpm" version="&gt;=8.0.0" manager="8.15.0" />
+        <package name="turbo" version="^1.11.3" />
+        <package name="typescript" version="^5.3.3" />
+      </node>
+      <api>
+        <package name="fastify" version="^5.0.0" />
+        <package name="@fastify/cors" version="^11.1.0" />
+        <package name="@fastify/helmet" version="^13.0.2" />
+        <package name="@fastify/swagger" version="^9.6.0" />
+        <package name="@fastify/swagger-ui" version="^5.2.3" />
+        <package name="@prisma/client" version="^6.19.0" />
+        <package name="prisma" version="^6.19.0" />
+        <package name="zod" version="^4.1.12" />
+        <package name="pino" version="^8.17.2" />
+        <package name="tsx" version="^4.7.0" />
+        <package name="vitest" version="^4.0.8" />
+      </api>
+      <web>
+        <package name="next" version="^15.0.0" />
+        <package name="react" version="^19.0.0" />
+        <package name="react-dom" version="^19.0.0" />
+        <package name="tailwindcss" version="^3.4.18" />
+        <package name="lucide-react" version="^0.553.0" />
+        <package name="next-themes" version="^0.4.6" />
+      </web>
+      <docker>
+        <image name="node:20-alpine" purpose="base image for all containers" />
+        <image name="pgvector/pgvector:pg16" purpose="PostgreSQL with vector extension" />
+        <tool name="dumb-init" purpose="signal handling in containers" />
+      </docker>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="pattern">Multi-stage Docker builds required to minimize final image size</constraint>
+    <constraint type="pattern">Non-root user in production containers for security</constraint>
+    <constraint type="pattern">pnpm workspaces must be respected in Docker builds</constraint>
+    <constraint type="pattern">Build @perrache/types before building apps</constraint>
+    <constraint type="requirement">Next.js standalone output mode for optimized container size</constraint>
+    <constraint type="requirement">Prisma migrations must run automatically on API startup</constraint>
+    <constraint type="requirement">Health checks for all services in docker-compose</constraint>
+    <constraint type="requirement">Service dependencies via depends_on with health conditions</constraint>
+    <constraint type="size">Backend image must be &lt;500MB</constraint>
+    <constraint type="size">Frontend image must be &lt;200MB</constraint>
+    <constraint type="network">Services communicate via Docker internal network using service names</constraint>
+    <constraint type="environment">NEXT_PUBLIC_* variables baked in at build time</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>Health Check Endpoint</name>
+      <kind>REST endpoint</kind>
+      <signature>GET /health -&gt; { status: string, timestamp: string, services: { database: string }, version: string }</signature>
+      <path>apps/api/src/app.ts:128-167</path>
+    </interface>
+    <interface>
+      <name>Docker Compose Services</name>
+      <kind>service orchestration</kind>
+      <signature>database (postgres:5432), api (api:3001), web (web:3000)</signature>
+      <path>docker-compose.yml</path>
+    </interface>
+    <interface>
+      <name>Database Migration</name>
+      <kind>CLI command</kind>
+      <signature>prisma migrate deploy (production) / prisma migrate dev (development)</signature>
+      <path>apps/api/docker-entrypoint.sh</path>
+    </interface>
+    <interface>
+      <name>Build Pipeline</name>
+      <kind>monorepo build</kind>
+      <signature>turbo run build -&gt; types first, then api/web in parallel</signature>
+      <path>turbo.json</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>The project uses Vitest for API testing with @vitest/ui for interactive test runner. Tests should be co-located with source code or in __tests__ directories. Integration tests for Docker should verify service health, inter-service communication, data persistence, and environment variable loading. Docker tests are manual verification via curl commands and docker-compose ps/logs.</standards>
+    <locations>
+      <location>apps/api/src/**/*.test.ts</location>
+      <location>apps/api/__tests__/**/*.ts</location>
+      <location>Manual: docker-compose ps, docker-compose logs</location>
+      <location>Manual: curl http://localhost:3001/health</location>
+      <location>Manual: curl http://localhost:3000</location>
+    </locations>
+    <ideas>
+      <idea ac="AC1">Verify API Dockerfile builds successfully with docker build command</idea>
+      <idea ac="AC2">Verify Web Dockerfile builds successfully with standalone output</idea>
+      <idea ac="AC3">Test docker-compose up starts all three services</idea>
+      <idea ac="AC4">Verify .env file variables are loaded by checking container env</idea>
+      <idea ac="AC5">Test migrations run by checking database schema after fresh start</idea>
+      <idea ac="AC6">Verify health checks pass with docker-compose ps showing healthy status</idea>
+      <idea ac="AC7">Test persistence by creating data, restarting, and verifying data exists</idea>
+      <idea ac="AC8">Full stack test: docker-compose up, access frontend, verify API connectivity</idea>
+      <idea ac="AC9">Measure image sizes with docker images command, optimize if &gt;targets</idea>
+    </ideas>
+  </tests>
+</story-context>

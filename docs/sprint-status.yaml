@@ -2,7 +2,7 @@
 # This tracks progress through BMM methodology phases
 # Phase 3/4 (Implementation) is tracked separately in sprint-status.yaml
 
-# generated: 2025-11-11
+# generated: 2025-11-15
 # project: perrache
 # project_key: perrache
 # tracking_system: file-system
@@ -33,7 +33,7 @@
 # - SM typically drafts next story after previous one is 'done' to incorporate learnings
 # - Dev moves story to 'review', SM reviews, then Dev moves to 'done'
 
-generated: 2025-11-11
+generated: 2025-11-15
 project: perrache
 project_key: perrache
 tracking_system: file-system
@@ -44,8 +44,8 @@ development_status:
   1-1-project-setup-repository-structure: complete
   1-2-postgresql-database-with-pgvector-extension: done
   1-3-fastify-backend-api-server-setup: done
-  1-4-nextjs-frontend-application-setup: review
-  1-5-docker-containerization-deployment-configuration: backlog
+  1-4-nextjs-frontend-application-setup: done
+  1-5-docker-containerization-deployment-configuration: done
   1-6-api-key-authentication-system: backlog
   1-7-observability-monitoring-setup: backlog
   epic-1-retrospective: optional
