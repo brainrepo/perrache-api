@@ -116,6 +116,81 @@ perrache/
 - **Frontend**: http://localhost:3000
 - **API**: http://localhost:3001
 - **API Health**: http://localhost:3001/health
+- **API Metrics**: http://localhost:3001/metrics
+- **API Docs**: http://localhost:3001/docs
+
+### Observability & Monitoring
+
+The API includes production-grade observability features:
+
+**Structured Logging (Pino)**
+
+```bash
+# Development mode automatically uses pino-pretty for readable logs
+pnpm --filter @perrache/api dev
+
+# Production logs are JSON format, written to stdout
+# Log levels configurable via LOG_LEVEL environment variable
+# Available levels: trace, debug, info, warn, error, fatal
+LOG_LEVEL=debug pnpm --filter @perrache/api dev
+```
+
+Log output includes:
+
+- Timestamp (ISO 8601)
+- Correlation ID (`reqId`)
+- HTTP method, URL, status code
+- Response time in milliseconds
+- Automatic redaction of sensitive data (auth headers, passwords, API keys)
+
+**Prometheus Metrics**
+
+```bash
+# Scrape metrics endpoint
+curl http://localhost:3001/metrics
+
+# Metrics include:
+# - http_requests_total (counter with method/route/status_code labels)
+# - http_request_duration_seconds (histogram with p50/p95/p99 buckets)
+# - Default Node.js metrics (CPU, memory, event loop)
+```
+
+Example Prometheus scrape config:
+
+```yaml
+scrape_configs:
+  - job_name: 'perrache-api'
+    static_configs:
+      - targets: ['localhost:3001']
+    metrics_path: '/metrics'
+```
+
+**Health Monitoring**
+
+```bash
+# Health check endpoint
+curl http://localhost:3001/health
+
+# Returns:
+# {
+#   "status": "healthy",
+#   "timestamp": "2025-11-15T12:00:00.000Z",
+#   "uptime": 3600,
+#   "services": { "database": "healthy" },
+#   "version": "0.1.0"
+# }
+```
+
+**Request Correlation**
+
+All responses include `X-Request-ID` header for distributed tracing:
+
+```bash
+curl -I http://localhost:3001/health
+# X-Request-ID: req_1731657600000_abc123xyz
+```
+
+Use this ID to correlate logs across services and debug request flows.
 
 ## Integration Example
 

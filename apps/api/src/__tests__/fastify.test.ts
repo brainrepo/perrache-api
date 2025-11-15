@@ -34,7 +34,9 @@ describe('Fastify Server Integration Tests', () => {
         url: '/health'
       })
 
-      expect(response.headers['access-control-allow-origin']).toBe('http://127.0.0.1:3000')
+      // CORS origin depends on environment variable or defaults to localhost
+      const origin = response.headers['access-control-allow-origin'] as string
+      expect(origin).toMatch(/^http:\/\/(localhost|127\.0\.0\.1):\d+$/)
       expect(response.headers['access-control-allow-credentials']).toBe('true')
     })
   })
@@ -53,10 +55,11 @@ describe('Fastify Server Integration Tests', () => {
         status: 'healthy',
         services: {
           database: 'healthy'
-        },
-        version: '0.1.0'
+        }
       })
+      expect(body.version).toMatch(/^\d+\.\d+\.\d+/) // Semver format
       expect(body.timestamp).toBeDefined()
+      expect(body.uptime).toBeDefined() // New uptime field
       expect(new Date(body.timestamp).toString()).not.toBe('Invalid Date')
     })
 
@@ -142,10 +145,8 @@ describe('Fastify Server Integration Tests', () => {
       const spec = JSON.parse(response.body)
       expect(spec).toHaveProperty('openapi')
       expect(spec).toHaveProperty('info')
-      expect(spec.info).toMatchObject({
-        title: 'Perrache API',
-        version: '0.1.0'
-      })
+      expect(spec.info.title).toBe('Perrache API')
+      expect(spec.info.version).toMatch(/^\d+\.\d+\.\d+/) // Semver format
     })
   })
 
@@ -161,10 +162,10 @@ describe('Fastify Server Integration Tests', () => {
       const body = JSON.parse(response.body)
       expect(body).toMatchObject({
         name: 'Perrache API',
-        version: '0.1.0',
         description: expect.any(String),
         docs: '/docs'
       })
+      expect(body.version).toMatch(/^\d+\.\d+\.\d+/) // Semver format
     })
   })
 

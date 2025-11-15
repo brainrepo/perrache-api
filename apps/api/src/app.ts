@@ -3,11 +3,20 @@ import cors from '@fastify/cors'
 import helmet from '@fastify/helmet'
 import swagger from '@fastify/swagger'
 import swaggerUi from '@fastify/swagger-ui'
+import { createRequire } from 'module'
 import { DatabaseService } from './lib/db.js'
 import { validateEnvironment } from './lib/env.js'
 import { adminKeysRoutes } from './routes/admin/keys.js'
 import rateLimitPlugin from './plugins/rate-limit.js'
 import authPlugin from './plugins/auth.js'
+import metricsPlugin from './plugins/metrics.js'
+
+// Load package.json for version info using createRequire (ES module compatible)
+const require = createRequire(import.meta.url)
+const packageJson = require('../package.json')
+
+// Track application start time for uptime calculation
+const appStartTime = Date.now()
 
 /**
  * Build Fastify application with all middleware and routes
@@ -21,6 +30,19 @@ export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
     logger: {
       level: env.LOG_LEVEL || 'info',
+      // Redact sensitive information from logs
+      redact: {
+        paths: [
+          'req.headers.authorization',
+          'req.headers["x-api-key"]',
+          '*.password',
+          '*.apiKey',
+          '*.key',
+          '*.token',
+          '*.secret'
+        ],
+        censor: '[REDACTED]'
+      },
       transport:
         env.NODE_ENV === 'development'
           ? {
@@ -81,6 +103,14 @@ export async function buildApp(): Promise<FastifyInstance> {
   // Register rate limiting plugin globally
   await app.register(rateLimitPlugin)
 
+  // Register Prometheus metrics plugin
+  await app.register(metricsPlugin)
+
+  // Add X-Request-ID to response headers for correlation tracking
+  app.addHook('onSend', async (request, reply) => {
+    reply.header('X-Request-ID', request.id)
+  })
+
   // Global error handler - registered BEFORE routes
   app.setErrorHandler((error, request, reply) => {
     // Log error with request ID for correlation
@@ -133,6 +163,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   // Health check endpoint with database connectivity
   app.get('/health', async (request, reply) => {
     const timestamp = new Date().toISOString()
+    const uptimeSeconds = Math.floor((Date.now() - appStartTime) / 1000)
 
     try {
       // Check database connectivity
@@ -143,20 +174,22 @@ export async function buildApp(): Promise<FastifyInstance> {
         return {
           status: 'unhealthy',
           timestamp,
+          uptime: uptimeSeconds,
           services: {
             database: 'unhealthy'
           },
-          version: '0.1.0'
+          version: packageJson.version
         }
       }
 
       return {
         status: 'healthy',
         timestamp,
+        uptime: uptimeSeconds,
         services: {
           database: 'healthy'
         },
-        version: '0.1.0'
+        version: packageJson.version
       }
     } catch (error) {
       request.log.error({ err: error }, 'Health check failed')
@@ -164,10 +197,11 @@ export async function buildApp(): Promise<FastifyInstance> {
       return {
         status: 'unhealthy',
         timestamp,
+        uptime: uptimeSeconds,
         services: {
           database: 'error'
         },
-        version: '0.1.0'
+        version: packageJson.version
       }
     }
   })
@@ -176,7 +210,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   app.get('/', async () => {
     return {
       name: 'Perrache API',
-      version: '0.1.0',
+      version: packageJson.version,
       description: 'Automated API catalog with semantic search',
       docs: '/docs'
     }
