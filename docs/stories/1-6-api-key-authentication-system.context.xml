@@ -1,0 +1,310 @@
+<story-context id="1-6-api-key-authentication-system" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>6</storyId>
+    <title>API Key Authentication System</title>
+    <status>ready-for-dev</status>
+    <generatedAt>2025-11-15</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/1-6-api-key-authentication-system.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>backend developer</asA>
+    <iWant>API key generation, storage, and validation middleware for webhook ingestion</iWant>
+    <soThat>only authorized services can upload API specs</soThat>
+    <tasks>
+      <task id="1" title="Database Schema - ApiKey Model">
+        <subtasks>
+          <item>Add ApiKey model to apps/api/prisma/schema.prisma with id, name, keyHash, createdAt, revokedAt</item>
+          <item>Add indexes on keyHash and revokedAt for fast lookup</item>
+          <item>Run pnpm --filter api prisma migrate dev to create migration</item>
+          <item>Verify migration applies successfully</item>
+        </subtasks>
+      </task>
+      <task id="2" title="API Key Service">
+        <subtasks>
+          <item>Create apps/api/src/services/api-key.service.ts</item>
+          <item>Implement generateApiKey() using crypto.randomBytes(32)</item>
+          <item>Encode key as Base64URL (URL-safe)</item>
+          <item>Implement hashApiKey() using SHA-256</item>
+          <item>Implement createApiKey(name) to store hash, return plaintext ONCE</item>
+          <item>Implement revokeApiKey(id) to set revokedAt timestamp</item>
+          <item>Implement validateApiKey(key) to check hash and verify not revoked</item>
+          <item>Add unit tests for key generation and hashing</item>
+        </subtasks>
+      </task>
+      <task id="3" title="Admin API Endpoints">
+        <subtasks>
+          <item>Create apps/api/src/routes/admin/keys.ts</item>
+          <item>POST /api/v1/admin/keys - Generate new API key with body { name: string }</item>
+          <item>Return 201 with { id, key, name, createdAt } - key plaintext ONCE</item>
+          <item>DELETE /api/v1/admin/keys/:id - Revoke API key, return 204</item>
+          <item>Register routes in app.ts with prefix /api/v1/admin/keys</item>
+          <item>Add TypeBox schemas for request/response validation</item>
+          <item>Add integration tests for both endpoints</item>
+        </subtasks>
+      </task>
+      <task id="4" title="Authentication Plugin">
+        <subtasks>
+          <item>Create apps/api/src/plugins/auth.ts as Fastify plugin</item>
+          <item>Use fastify-plugin wrapper for proper encapsulation</item>
+          <item>decorateRequest('apiKeyId', null) to declare request property</item>
+          <item>Add onRequest hook for Bearer token validation</item>
+          <item>Extract token from Authorization header</item>
+          <item>Hash token and query database for matching keyHash</item>
+          <item>Check revokedAt is null (key not revoked)</item>
+          <item>Return 401 Unauthorized with reply.send() and return reply for invalid keys</item>
+          <item>Attach apiKeyId to request.apiKeyId on success</item>
+          <item>Register plugin in app.ts for protected route contexts</item>
+          <item>Add integration tests for auth plugin</item>
+        </subtasks>
+      </task>
+      <task id="5" title="Rate Limiting Configuration">
+        <subtasks>
+          <item>Install @fastify/rate-limit dependency if not present</item>
+          <item>Add RATE_LIMIT_MAX environment variable to .env.example (default: 100)</item>
+          <item>Create apps/api/src/plugins/rate-limit.ts</item>
+          <item>Configure max from process.env.RATE_LIMIT_MAX || 100</item>
+          <item>Configure timeWindow: '1 hour'</item>
+          <item>keyGenerator: Extract API key from Authorization header</item>
+          <item>Custom errorResponseBuilder for structured 429 response</item>
+          <item>Include Retry-After header in response</item>
+          <item>Register rate-limit plugin in app.ts</item>
+          <item>Add integration tests for rate limit enforcement</item>
+        </subtasks>
+      </task>
+      <task id="6" title="Shared Types Package">
+        <subtasks>
+          <item>Add API key types to packages/types/src/api.ts</item>
+          <item>ApiKeyCreateRequest: { name: string }</item>
+          <item>ApiKeyCreateResponse: { id, key, name, createdAt }</item>
+          <item>Export types from packages/types/src/index.ts</item>
+          <item>Build types package: pnpm --filter @perrache/types build</item>
+        </subtasks>
+      </task>
+      <task id="7" title="Documentation and Testing">
+        <subtasks>
+          <item>Update OpenAPI documentation via @fastify/swagger annotations</item>
+          <item>Document API key rotation workflow</item>
+          <item>Add comprehensive integration tests</item>
+          <item>Run full test suite: pnpm --filter api test</item>
+        </subtasks>
+      </task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC1">API keys are cryptographically strong (256-bit, 32 bytes from crypto.randomBytes)</criterion>
+    <criterion id="AC2">API keys are stored as SHA-256 hashes in the database (not plaintext)</criterion>
+    <criterion id="AC3">Database table api_keys stores: id (cuid), keyHash (unique), name, createdAt, revokedAt (nullable)</criterion>
+    <criterion id="AC4">Admin endpoint POST /api/v1/admin/keys with body {"name": "string"} generates new API key and returns plaintext key ONCE in response</criterion>
+    <criterion id="AC5">Admin endpoint DELETE /api/v1/admin/keys/:id sets revokedAt timestamp (soft delete)</criterion>
+    <criterion id="AC6">Authentication plugin validates Bearer token in Authorization header against stored hashes</criterion>
+    <criterion id="AC7">Invalid or revoked keys return 401 Unauthorized with structured error response containing code "UNAUTHORIZED"</criterion>
+    <criterion id="AC8">Rate limiting enforced at configurable requests per hour per API key via @fastify/rate-limit (default: 100/hour)</criterion>
+    <criterion id="AC9">Request exceeding rate limit returns 429 Rate Limit Exceeded with Retry-After header</criterion>
+    <criterion id="AC10">Authenticated requests include API key ID in request context (request.apiKeyId) for downstream use</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>FR-6.1: API Key Management (MVP)</section>
+        <snippet>System SHALL issue API keys for webhook ingestion with key rotation, revocation capability, and rate limiting per key.</snippet>
+      </doc>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>NFR-SEC1: API Key Security</section>
+        <snippet>API keys SHALL be cryptographically strong (256-bit minimum), stored as salted hashes (bcrypt or Argon2), support key rotation without service disruption, and rate limiting per key to prevent abuse.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>API Key Management</section>
+        <snippet>Generate new API key using randomBytes(32).toString('base64url'), store SHA-256 hash using createHash('sha256'), return plaintext key ONCE. validateKey() hashes input and queries database.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Rate Limiting</section>
+        <snippet>Configure @fastify/rate-limit with max: 100 requests per timeWindow: '1 hour', keyGenerator extracts API key from Authorization header, custom errorResponseBuilder for structured 429 response.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Implementation Patterns - Naming Conventions</section>
+        <snippet>Services use pattern: api-key.service.ts. Routes: specs.route.ts. Plugins: rate-limit.ts. Database columns: camelCase (keyHash, createdAt). REST API: plural nouns with /api/v1/ prefix.</snippet>
+      </doc>
+      <doc>
+        <path>docs/tech-spec-epic-1.md</path>
+        <title>Technical Specification Epic 1</title>
+        <section>Story 1.6: API Key Authentication System</section>
+        <snippet>API keys cryptographically strong (256-bit random tokens), stored as SHA-256 hashes, admin endpoints for key generation and revocation, authentication middleware validates Bearer token, rate limiting per API key.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic Breakdown</title>
+        <section>Epic 1, Story 1.6</section>
+        <snippet>Role: Backend Developer. Action: API key generation, storage, and validation middleware. Benefit: Only authorized services can upload API specs. Includes admin endpoints, auth middleware, rate limiting.</snippet>
+      </doc>
+    </docs>
+
+    <code>
+      <artifact>
+        <path>apps/api/src/app.ts</path>
+        <kind>fastify-app</kind>
+        <symbol>buildApp</symbol>
+        <lines>1-181</lines>
+        <reason>Main Fastify application setup. Register new auth and rate-limit plugins here. Error handler already supports UNAUTHORIZED (401) and RATE_LIMIT_EXCEEDED (429) codes. setNotFoundHandler pattern established.</reason>
+      </artifact>
+      <artifact>
+        <path>apps/api/src/lib/db.ts</path>
+        <kind>service</kind>
+        <symbol>DatabaseService</symbol>
+        <lines>1-51</lines>
+        <reason>Singleton Prisma client pattern. Use DatabaseService.getInstance() for database queries in api-key.service.ts. Follow same singleton export pattern.</reason>
+      </artifact>
+      <artifact>
+        <path>apps/api/src/lib/env.ts</path>
+        <kind>utility</kind>
+        <symbol>validateEnvironment</symbol>
+        <lines>1-43</lines>
+        <reason>Environment variable validation pattern. Add RATE_LIMIT_MAX to EnvironmentConfig interface. Follow same optional vs required pattern.</reason>
+      </artifact>
+      <artifact>
+        <path>apps/api/prisma/schema.prisma</path>
+        <kind>database-schema</kind>
+        <symbol>Prisma schema</symbol>
+        <lines>1-16</lines>
+        <reason>Add ApiKey model here. pgvector extension already enabled. Follow cuid() id pattern and DateTime defaults.</reason>
+      </artifact>
+      <artifact>
+        <path>apps/api/src/__tests__/fastify.test.ts</path>
+        <kind>integration-test</kind>
+        <symbol>Fastify Server Integration Tests</symbol>
+        <lines>1-184</lines>
+        <reason>Integration test pattern using app.inject(). Follow same beforeAll/afterAll setup with buildApp(). Error response structure validated at lines 84-98. Use this pattern for auth and rate limit tests.</reason>
+      </artifact>
+      <artifact>
+        <path>apps/api/src/__tests__/setup.ts</path>
+        <kind>test-setup</kind>
+        <symbol>test setup</symbol>
+        <lines>1-14</lines>
+        <reason>Test setup with dotenv and DatabaseService initialization. Tests use real database connection.</reason>
+      </artifact>
+    </code>
+
+    <dependencies>
+      <node>
+        <package name="fastify" version="^5.0.0" />
+        <package name="@fastify/cors" version="^11.1.0" />
+        <package name="@fastify/helmet" version="^13.0.2" />
+        <package name="@fastify/swagger" version="^9.6.0" />
+        <package name="@fastify/swagger-ui" version="^5.2.3" />
+        <package name="@prisma/client" version="^6.19.0" />
+        <package name="zod" version="^4.1.12" />
+        <package name="pino" version="^8.17.2" />
+        <package name="fastify-plugin" required="ADD" reason="Wrap auth plugin for encapsulation" />
+        <package name="@fastify/rate-limit" required="ADD" reason="Rate limiting per API key" />
+      </node>
+      <devDependencies>
+        <package name="vitest" version="^4.0.8" />
+        <package name="tsx" version="^4.7.0" />
+        <package name="typescript" version="^5.3.3" />
+        <package name="dotenv" version="^17.2.3" />
+      </devDependencies>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="security">API keys MUST be 256-bit (32 bytes) minimum per NFR-SEC1</constraint>
+    <constraint type="security">Keys stored as SHA-256 hashes only, never plaintext in database</constraint>
+    <constraint type="security">Plaintext key returned ONCE during creation, never retrievable afterward</constraint>
+    <constraint type="configuration">Rate limiting default 100 requests/hour, configurable via RATE_LIMIT_MAX environment variable</constraint>
+    <constraint type="pattern">Authentication uses Fastify plugin pattern with onRequest hook and decorateRequest (not Express-style middleware)</constraint>
+    <constraint type="pattern">Error responses follow structured format: { error: { code, message, details? } }</constraint>
+    <constraint type="pattern">Services follow singleton pattern like DatabaseService</constraint>
+    <constraint type="pattern">Routes registered with /api/v1/ prefix</constraint>
+    <constraint type="naming">Files: kebab-case (api-key.service.ts), Database columns: camelCase (keyHash)</constraint>
+    <constraint type="testing">Integration tests use app.inject() pattern with real database</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>POST /api/v1/admin/keys</name>
+      <kind>REST endpoint</kind>
+      <signature>
+        Request: { name: string }
+        Response 201: { id: string, key: string, name: string, createdAt: string }
+        Error 400: { error: { code: "INVALID_REQUEST", message: string } }
+      </signature>
+      <path>apps/api/src/routes/admin/keys.ts</path>
+    </interface>
+    <interface>
+      <name>DELETE /api/v1/admin/keys/:id</name>
+      <kind>REST endpoint</kind>
+      <signature>
+        Response 204: No Content
+        Error 404: { error: { code: "NOT_FOUND", message: string } }
+      </signature>
+      <path>apps/api/src/routes/admin/keys.ts</path>
+    </interface>
+    <interface>
+      <name>ApiKeyService</name>
+      <kind>service class</kind>
+      <signature>
+        generateApiKey(): string
+        hashApiKey(key: string): string
+        createApiKey(name: string): Promise&lt;{ id: string, key: string, name: string, createdAt: Date }&gt;
+        revokeApiKey(id: string): Promise&lt;void&gt;
+        validateApiKey(key: string): Promise&lt;{ id: string } | null&gt;
+      </signature>
+      <path>apps/api/src/services/api-key.service.ts</path>
+    </interface>
+    <interface>
+      <name>authPlugin</name>
+      <kind>fastify plugin</kind>
+      <signature>
+        Decorates: request.apiKeyId (string | null)
+        Hook: onRequest - validates Bearer token
+        Returns: 401 if invalid, continues if valid
+      </signature>
+      <path>apps/api/src/plugins/auth.ts</path>
+    </interface>
+    <interface>
+      <name>rateLimitPlugin</name>
+      <kind>fastify plugin</kind>
+      <signature>
+        Config: { max: number, timeWindow: '1 hour', keyGenerator: Function }
+        Returns: 429 with Retry-After header when limit exceeded
+      </signature>
+      <path>apps/api/src/plugins/rate-limit.ts</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Vitest is the testing framework with @vitest/ui for visual test runner. Tests use real database connections via Prisma. Integration tests use Fastify's app.inject() method for HTTP request simulation without starting the server. Test files follow *.test.ts pattern in src/__tests__/ directory. Setup file initializes DatabaseService before tests and disconnects after. Tests validate both success responses and standardized error structures. Environment variables loaded from .env file via dotenv/config.
+    </standards>
+    <locations>
+      <location>apps/api/src/__tests__/*.test.ts</location>
+      <location>apps/api/src/__tests__/setup.ts</location>
+    </locations>
+    <ideas>
+      <idea ac="AC1">Test that generateApiKey() returns 44-character Base64URL string (32 bytes encoded)</idea>
+      <idea ac="AC2">Test that keyHash in database differs from original key and has SHA-256 hex format (64 chars)</idea>
+      <idea ac="AC3">Verify ApiKey model in Prisma schema has correct fields and indexes via migration</idea>
+      <idea ac="AC4">POST /api/v1/admin/keys returns 201 with id, key, name, createdAt; key is plaintext, never returned again</idea>
+      <idea ac="AC5">DELETE /api/v1/admin/keys/:id sets revokedAt, returns 204; subsequent auth fails</idea>
+      <idea ac="AC6">Request with valid Bearer token passes auth, sets request.apiKeyId; invalid format returns 401</idea>
+      <idea ac="AC7">Revoked key returns 401 UNAUTHORIZED; missing auth header returns 401; invalid key returns 401</idea>
+      <idea ac="AC8">Send 100 requests, all succeed; verify RATE_LIMIT_MAX env var is respected</idea>
+      <idea ac="AC9">101st request returns 429 with Retry-After header; error structure matches { error: { code: "RATE_LIMIT_EXCEEDED" } }</idea>
+      <idea ac="AC10">After successful auth, request.apiKeyId contains the database ID of the validated key</idea>
+    </ideas>
+  </tests>
+</story-context>

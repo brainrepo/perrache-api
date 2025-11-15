@@ -46,7 +46,7 @@ development_status:
   1-3-fastify-backend-api-server-setup: done
   1-4-nextjs-frontend-application-setup: done
   1-5-docker-containerization-deployment-configuration: done
-  1-6-api-key-authentication-system: backlog
+  1-6-api-key-authentication-system: done
   1-7-observability-monitoring-setup: backlog
   epic-1-retrospective: optional
 

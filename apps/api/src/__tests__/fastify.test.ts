@@ -34,7 +34,7 @@ describe('Fastify Server Integration Tests', () => {
         url: '/health'
       })
 
-      expect(response.headers['access-control-allow-origin']).toBe('http://localhost:3000')
+      expect(response.headers['access-control-allow-origin']).toBe('http://127.0.0.1:3000')
       expect(response.headers['access-control-allow-credentials']).toBe('true')
     })
   })

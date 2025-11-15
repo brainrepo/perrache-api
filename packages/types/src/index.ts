@@ -55,4 +55,23 @@ export interface PaginatedResponse<T> {
   }
 }
 
+// API Key types for authentication
+export interface ApiKeyCreateRequest {
+  name: string
+}
+
+export interface ApiKeyCreateResponse {
+  id: string
+  key: string
+  name: string
+  createdAt: string
+}
+
+export interface ApiKeyInfo {
+  id: string
+  name: string
+  createdAt: string
+  revokedAt?: string
+}
+
 // More types will be added as the project progresses

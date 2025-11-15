@@ -13,3 +13,16 @@ datasource db {
 }
 
 // Vector similarity search types will be added as models are defined
+
+// API Key model for authentication
+model ApiKey {
+  id        String    @id @default(cuid())
+  name      String
+  keyHash   String    @unique
+  createdAt DateTime  @default(now())
+  revokedAt DateTime?
+
+  @@index([keyHash])
+  @@index([revokedAt])
+  @@map("api_keys")
+}

@@ -5,6 +5,9 @@ import swagger from '@fastify/swagger'
 import swaggerUi from '@fastify/swagger-ui'
 import { DatabaseService } from './lib/db.js'
 import { validateEnvironment } from './lib/env.js'
+import { adminKeysRoutes } from './routes/admin/keys.js'
+import rateLimitPlugin from './plugins/rate-limit.js'
+import authPlugin from './plugins/auth.js'
 
 /**
  * Build Fastify application with all middleware and routes
@@ -39,7 +42,7 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   // Register CORS middleware BEFORE routes
   await app.register(cors, {
-    origin: env.CORS_ORIGIN || 'http://localhost:3000',
+    origin: env.CORS_ORIGIN || 'http://localhost:3001',
     credentials: true
   })
 
@@ -74,6 +77,9 @@ export async function buildApp(): Promise<FastifyInstance> {
     },
     staticCSP: true
   })
+
+  // Register rate limiting plugin globally
+  await app.register(rateLimitPlugin)
 
   // Global error handler - registered BEFORE routes
   app.setErrorHandler((error, request, reply) => {
@@ -175,6 +181,25 @@ export async function buildApp(): Promise<FastifyInstance> {
       docs: '/docs'
     }
   })
+
+  // Register admin routes (unauthenticated - for key management)
+  await app.register(adminKeysRoutes, { prefix: '/api/v1/admin/keys' })
+
+  // Register protected routes with authentication
+  // Auth plugin is encapsulated to this context only
+  await app.register(
+    async (protectedContext) => {
+      await protectedContext.register(authPlugin)
+      // Future protected routes (e.g., webhook ingestion) will be registered here
+      protectedContext.get('/protected', async (request) => {
+        return {
+          message: 'Access granted',
+          apiKeyId: request.apiKeyId
+        }
+      })
+    },
+    { prefix: '/api/v1' }
+  )
 
   return app
 }
