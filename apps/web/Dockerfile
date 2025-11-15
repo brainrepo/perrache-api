@@ -55,12 +55,16 @@ RUN apk add --no-cache dumb-init
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001
 
-WORKDIR /app
+# Copy pnpm stores to where symlinks expect them
+COPY --from=builder /app/node_modules/.pnpm /app/apps/web/node_modules/.pnpm
+COPY --from=builder /app/apps/web/node_modules/.pnpm /app/apps/web/apps/web/node_modules/.pnpm
 
-# Copy necessary files
-COPY --from=builder /app/apps/web/public ./public
+WORKDIR /app/apps/web/.next/standalone
+
+# Copy necessary files from standalone build
 COPY --from=builder /app/apps/web/.next/standalone ./
 COPY --from=builder /app/apps/web/.next/static ./.next/static
+COPY --from=builder /app/apps/web/public ./public
 
 # Change ownership
 RUN chown -R nextjs:nodejs /app

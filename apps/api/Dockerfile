@@ -37,15 +37,12 @@ RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
 # Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+# Copy dependencies from builder (includes Prisma)
+COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages ./packages
+COPY --from=builder /app/apps/api/node_modules ./apps/api/node_modules
+COPY package.json pnpm-workspace.yaml ./
 COPY --from=builder /app/apps/api/package.json ./apps/api/
-
-# Install production dependencies (Prisma is included)
-# Set HUSKY=0 to skip git hooks in Docker
-ENV HUSKY=0
-RUN pnpm install --frozen-lockfile --prod
 
 # Copy built application
 COPY --from=builder /app/apps/api/dist ./apps/api/dist
