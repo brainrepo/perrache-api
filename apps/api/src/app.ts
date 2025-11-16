@@ -12,6 +12,7 @@ import rateLimitPlugin from './plugins/rate-limit.js'
 import authPlugin from './plugins/auth.js'
 import metricsPlugin from './plugins/metrics.js'
 import apiKeyServicePlugin from './plugins/api-key.js'
+import openAPIValidationServicePlugin from './plugins/openapi-validation.js'
 
 // Load package.json for version info using createRequire (ES module compatible)
 const require = createRequire(import.meta.url)
@@ -67,6 +68,9 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   // Register API Key Service plugin (uses config from @fastify/env)
   await app.register(apiKeyServicePlugin)
+
+  // Register OpenAPI Validation Service plugin (stateless, no dependencies)
+  await app.register(openAPIValidationServicePlugin)
 
   // Register CORS middleware BEFORE routes
   await app.register(cors, {
