@@ -4,7 +4,10 @@ import { FastifyInstance, FastifyRequest } from 'fastify'
 
 /**
  * Rate limiting plugin configuration
- * Enforces request limits per API key (from Authorization header)
+ * Enforces request limits per IP address to prevent brute force attacks
+ *
+ * Security: Uses IP-based limiting to prevent attackers from bypassing
+ * rate limits by using different tokens for each request
  */
 async function rateLimitPlugin(fastify: FastifyInstance): Promise<void> {
   const maxRequests = parseInt(process.env.RATE_LIMIT_MAX || '100', 10)
@@ -13,13 +16,9 @@ async function rateLimitPlugin(fastify: FastifyInstance): Promise<void> {
     max: maxRequests,
     timeWindow: '1 hour',
 
-    // Extract API key from Authorization header for per-key limiting
+    // Use IP address as the rate limit key to prevent brute force attacks
+    // This ensures that even if attackers use different tokens, they are still limited
     keyGenerator: (request: FastifyRequest) => {
-      const authHeader = request.headers.authorization
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        return authHeader.slice(7) // Return the API key token
-      }
-      // Fall back to IP address if no auth header
       return request.ip
     },
 

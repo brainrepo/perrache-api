@@ -1,20 +1,17 @@
-import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
 import { FastifyInstance } from 'fastify'
 import Fastify from 'fastify'
 import rateLimitPlugin from '../plugins/rate-limit'
-import { apiKeyService } from '../services/api-key.service'
-import { db } from '../lib/db'
 
 describe('Rate Limit Plugin', () => {
   let app: FastifyInstance
-  const createdKeyIds: string[] = []
   const originalEnv = process.env.RATE_LIMIT_MAX
 
-  beforeAll(async () => {
+  beforeEach(async () => {
     // Set a small limit for testing
     process.env.RATE_LIMIT_MAX = '3'
 
-    // Create a test app with rate limit plugin
+    // Create a fresh test app for each test to reset rate limit counters
     app = Fastify({ logger: false })
 
     await app.register(rateLimitPlugin)
@@ -48,156 +45,132 @@ describe('Rate Limit Plugin', () => {
   afterAll(async () => {
     // Restore original env
     process.env.RATE_LIMIT_MAX = originalEnv
-    await app.close()
-  })
-
-  afterEach(async () => {
-    // Clean up created keys
-    if (createdKeyIds.length > 0) {
-      await db.apiKey.deleteMany({
-        where: { id: { in: createdKeyIds } }
-      })
-      createdKeyIds.length = 0
-    }
   })
 
   describe('Rate Limit Enforcement', () => {
     it('should allow requests within rate limit', async () => {
-      const { id, key } = await apiKeyService.createApiKey('rate-test')
-      createdKeyIds.push(id)
-
-      // Make 3 requests (the limit)
+      // Make 3 requests (the limit) - all from same IP
       for (let i = 0; i < 3; i++) {
         const response = await app.inject({
           method: 'GET',
-          url: '/test',
-          headers: {
-            authorization: `Bearer ${key}`
-          }
+          url: '/test'
         })
 
         expect(response.statusCode).toBe(200)
         expect(response.json().message).toBe('Success')
       }
+
+      await app.close()
     })
 
     it('should return 429 when rate limit exceeded', async () => {
-      const { id, key } = await apiKeyService.createApiKey('exceed-test')
-      createdKeyIds.push(id)
-
       // Make requests up to the limit
       for (let i = 0; i < 3; i++) {
         await app.inject({
           method: 'GET',
-          url: '/test',
-          headers: {
-            authorization: `Bearer ${key}`
-          }
+          url: '/test'
         })
       }
 
       // 4th request should be rate limited
       const response = await app.inject({
         method: 'GET',
-        url: '/test',
-        headers: {
-          authorization: `Bearer ${key}`
-        }
+        url: '/test'
       })
-
-      // Debug: log the response if not 429
-      if (response.statusCode !== 429) {
-        console.log('Unexpected response:', response.statusCode, response.json())
-      }
 
       expect(response.statusCode).toBe(429)
 
       const body = response.json()
       expect(body.error.code).toBe('RATE_LIMIT_EXCEEDED')
       expect(body.error.message).toBeDefined()
+
+      await app.close()
     })
 
     it('should include Retry-After header when rate limited', async () => {
-      const { id, key } = await apiKeyService.createApiKey('retry-after-test')
-      createdKeyIds.push(id)
-
       // Exhaust the rate limit
       for (let i = 0; i < 3; i++) {
         await app.inject({
           method: 'GET',
-          url: '/test',
-          headers: {
-            authorization: `Bearer ${key}`
-          }
+          url: '/test'
         })
       }
 
       // Next request should include Retry-After
       const response = await app.inject({
         method: 'GET',
-        url: '/test',
-        headers: {
-          authorization: `Bearer ${key}`
-        }
+        url: '/test'
       })
 
       expect(response.statusCode).toBe(429)
       expect(response.headers['retry-after']).toBeDefined()
+
+      await app.close()
     })
 
-    it('should track rate limits per API key independently', async () => {
-      const key1Result = await apiKeyService.createApiKey('key1')
-      const key2Result = await apiKeyService.createApiKey('key2')
-      createdKeyIds.push(key1Result.id, key2Result.id)
+    it('should rate limit regardless of token used (prevents brute force)', async () => {
+      // Make requests with different tokens - they should all count toward the same IP limit
+      const tokens = ['token1', 'token2', 'token3', 'token4']
 
-      // Exhaust limit for key1
       for (let i = 0; i < 3; i++) {
-        await app.inject({
+        const response = await app.inject({
           method: 'GET',
           url: '/test',
           headers: {
-            authorization: `Bearer ${key1Result.key}`
+            authorization: `Bearer ${tokens[i]}`
           }
         })
+        expect(response.statusCode).toBe(200)
       }
 
-      // Key1 should be rate limited
-      const key1Response = await app.inject({
-        method: 'GET',
-        url: '/test',
-        headers: {
-          authorization: `Bearer ${key1Result.key}`
-        }
-      })
-      expect(key1Response.statusCode).toBe(429)
-
-      // Key2 should still have quota
-      const key2Response = await app.inject({
-        method: 'GET',
-        url: '/test',
-        headers: {
-          authorization: `Bearer ${key2Result.key}`
-        }
-      })
-      expect(key2Response.statusCode).toBe(200)
-    })
-
-    it('should include rate limit headers in response', async () => {
-      const { id, key } = await apiKeyService.createApiKey('headers-test')
-      createdKeyIds.push(id)
-
+      // 4th request with yet another token should still be rate limited
       const response = await app.inject({
         method: 'GET',
         url: '/test',
         headers: {
-          authorization: `Bearer ${key}`
+          authorization: `Bearer ${tokens[3]}`
         }
+      })
+
+      expect(response.statusCode).toBe(429)
+      expect(response.json().error.code).toBe('RATE_LIMIT_EXCEEDED')
+
+      await app.close()
+    })
+
+    it('should rate limit requests without auth headers', async () => {
+      // Make requests without any auth header
+      for (let i = 0; i < 3; i++) {
+        const response = await app.inject({
+          method: 'GET',
+          url: '/test'
+        })
+        expect(response.statusCode).toBe(200)
+      }
+
+      // 4th request should be rate limited
+      const response = await app.inject({
+        method: 'GET',
+        url: '/test'
+      })
+
+      expect(response.statusCode).toBe(429)
+
+      await app.close()
+    })
+
+    it('should include rate limit headers in response', async () => {
+      const response = await app.inject({
+        method: 'GET',
+        url: '/test'
       })
 
       expect(response.statusCode).toBe(200)
       expect(response.headers['x-ratelimit-limit']).toBeDefined()
       expect(response.headers['x-ratelimit-remaining']).toBeDefined()
       expect(response.headers['x-ratelimit-reset']).toBeDefined()
+
+      await app.close()
     })
   })
 })
