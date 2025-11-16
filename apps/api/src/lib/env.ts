@@ -11,6 +11,7 @@ export interface EnvironmentConfig {
   HOST: string
   CORS_ORIGIN: string
   LOG_LEVEL: string
+  API_KEY_SECRET: string
 }
 
 /**
@@ -19,7 +20,7 @@ export interface EnvironmentConfig {
  */
 export const envSchema = {
   type: 'object',
-  required: ['DATABASE_URL'],
+  required: ['DATABASE_URL', 'API_KEY_SECRET'],
   properties: {
     DATABASE_URL: {
       type: 'string',
@@ -56,6 +57,11 @@ export const envSchema = {
       default: 'info',
       enum: ['trace', 'debug', 'info', 'warn', 'error', 'fatal'],
       description: 'Pino log level'
+    },
+    API_KEY_SECRET: {
+      type: 'string',
+      minLength: 32,
+      description: 'Secret key for HMAC-SHA-256 API key hashing (min 32 chars)'
     }
   }
 } as const

@@ -1,6 +1,5 @@
 import { FastifyInstance } from 'fastify'
 import { Type } from '@sinclair/typebox'
-import { apiKeyService } from '../../services/api-key.service.js'
 import type { ApiKeyCreateRequest, ApiKeyCreateResponse } from '@perrache/types'
 
 // Request/Response schemas using TypeBox for runtime validation
@@ -46,7 +45,7 @@ export async function adminKeysRoutes(fastify: FastifyInstance): Promise<void> {
     async (request, reply) => {
       const { name } = request.body
 
-      const result = await apiKeyService.createApiKey(name)
+      const result = await fastify.apiKeyService.createApiKey(name)
 
       const response: ApiKeyCreateResponse = {
         id: result.id,
@@ -78,7 +77,7 @@ export async function adminKeysRoutes(fastify: FastifyInstance): Promise<void> {
     async (request, reply) => {
       const { id } = request.params
 
-      await apiKeyService.revokeApiKey(id)
+      await fastify.apiKeyService.revokeApiKey(id)
 
       return reply.status(204).send()
     }

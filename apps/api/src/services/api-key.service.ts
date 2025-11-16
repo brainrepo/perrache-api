@@ -6,31 +6,17 @@ import { db } from '../lib/db.js'
  * Keys are cryptographically strong (256-bit) and stored as HMAC-SHA-256 hashes
  */
 export class ApiKeyService {
-  private static instance: ApiKeyService | null = null
   private hmacSecret: string
 
-  private constructor() {
-    this.hmacSecret = this.getHmacSecret()
-  }
-
   /**
-   * Get the HMAC secret from environment variable
-   * @throws Error if API_KEY_SECRET is not set
-   * @returns The HMAC secret
+   * Create a new ApiKeyService instance
+   * @param hmacSecret - Secret key for HMAC-SHA-256 hashing (injected from app.config)
    */
-  private getHmacSecret(): string {
-    const secret = process.env.API_KEY_SECRET
-    if (!secret) {
-      throw new Error('API_KEY_SECRET environment variable is not set')
+  constructor(hmacSecret: string) {
+    if (!hmacSecret || hmacSecret.length < 32) {
+      throw new Error('API_KEY_SECRET must be at least 32 characters')
     }
-    return secret
-  }
-
-  static getInstance(): ApiKeyService {
-    if (!ApiKeyService.instance) {
-      ApiKeyService.instance = new ApiKeyService()
-    }
-    return ApiKeyService.instance
+    this.hmacSecret = hmacSecret
   }
 
   /**
@@ -132,6 +118,3 @@ export class ApiKeyService {
     return { id: apiKey.id }
   }
 }
-
-// Export singleton instance
-export const apiKeyService = ApiKeyService.getInstance()

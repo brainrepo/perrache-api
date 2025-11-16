@@ -11,6 +11,7 @@ import { adminKeysRoutes } from './routes/admin/keys.js'
 import rateLimitPlugin from './plugins/rate-limit.js'
 import authPlugin from './plugins/auth.js'
 import metricsPlugin from './plugins/metrics.js'
+import apiKeyServicePlugin from './plugins/api-key.js'
 
 // Load package.json for version info using createRequire (ES module compatible)
 const require = createRequire(import.meta.url)
@@ -63,6 +64,9 @@ export async function buildApp(): Promise<FastifyInstance> {
   // Register @fastify/env FIRST for environment variable validation
   // This validates and loads env vars with JSON Schema validation
   await app.register(fastifyEnv, envOptions)
+
+  // Register API Key Service plugin (uses config from @fastify/env)
+  await app.register(apiKeyServicePlugin)
 
   // Register CORS middleware BEFORE routes
   await app.register(cors, {
