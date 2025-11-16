@@ -11,9 +11,7 @@
 import type { PrismaClient } from '@prisma/client'
 import type { OpenAPI } from 'openapi-types'
 import type { SpecMetadata } from './spec-metadata.service.js'
-
-/** Valid HTTP methods for endpoint counting */
-const VALID_HTTP_METHODS = ['get', 'post', 'put', 'delete', 'patch', 'head', 'options'] as const
+import { countEndpoints } from '../utils/openapi-spec.utils.js'
 
 /**
  * Result of storing a spec in the database
@@ -110,7 +108,7 @@ export class SpecStorageService {
     })
 
     // Count endpoints in the spec
-    const endpointsCount = this.countEndpoints(spec)
+    const endpointsCount = countEndpoints(spec)
 
     return {
       apiId: api.id,
@@ -118,40 +116,5 @@ export class SpecStorageService {
       endpointsCount,
       isNewApi
     }
-  }
-
-  /**
-   * Count the number of endpoints (path + method combinations) in a spec
-   *
-   * @param spec - OpenAPI specification
-   * @returns Number of endpoints
-   */
-  countEndpoints(spec: OpenAPI.Document | object): number {
-    const specObj = spec as Record<string, unknown>
-    const paths = specObj.paths
-
-    if (!paths || typeof paths !== 'object') {
-      return 0
-    }
-
-    const pathsObj = paths as Record<string, unknown>
-    let count = 0
-
-    for (const [pathKey, pathValue] of Object.entries(pathsObj)) {
-      // Skip extension fields
-      if (pathKey.startsWith('x-')) continue
-      if (!pathValue || typeof pathValue !== 'object') continue
-
-      const pathObj = pathValue as Record<string, unknown>
-
-      for (const methodKey of Object.keys(pathObj)) {
-        const lowerMethod = methodKey.toLowerCase()
-        if (VALID_HTTP_METHODS.includes(lowerMethod as (typeof VALID_HTTP_METHODS)[number])) {
-          count++
-        }
-      }
-    }
-
-    return count
   }
 }
