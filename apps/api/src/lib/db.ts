@@ -7,15 +7,35 @@ import { PrismaClient } from '@prisma/client'
 class DatabaseService {
   private static instance: PrismaClient | null = null
 
+  /**
+   * Builds the database URL with connection_limit parameter for Prisma
+   * Prisma uses connection_limit in the URL to configure pool size
+   */
+  private static buildDatabaseUrl(): string {
+    const baseUrl = process.env.DATABASE_URL || ''
+    const poolSize = parseInt(process.env.DB_POOL_SIZE || '10', 10)
+
+    // Parse the URL to add connection_limit parameter
+    const url = new URL(baseUrl)
+
+    // Only set connection_limit if not already present in the URL
+    if (!url.searchParams.has('connection_limit')) {
+      url.searchParams.set('connection_limit', poolSize.toString())
+    }
+
+    return url.toString()
+  }
+
   static getInstance(): PrismaClient {
     if (!DatabaseService.instance) {
       const poolSize = parseInt(process.env.DB_POOL_SIZE || '10', 10)
+      const databaseUrl = DatabaseService.buildDatabaseUrl()
 
       DatabaseService.instance = new PrismaClient({
         log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
         datasources: {
           db: {
-            url: process.env.DATABASE_URL
+            url: databaseUrl
           }
         }
       })
