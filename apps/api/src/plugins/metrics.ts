@@ -35,13 +35,13 @@ async function metricsPlugin(fastify: FastifyInstance): Promise<void> {
   // Track request metrics on response
   fastify.addHook('onResponse', (request, reply, done) => {
     // Skip metrics collection for excluded paths
-    const path = request.routerPath || request.url
+    const path = request.routeOptions.url || request.url
     if (excludePaths.some((excludePath) => path.startsWith(excludePath))) {
       done()
       return
     }
 
-    const route = request.routerPath || request.url
+    const route = request.routeOptions.url || request.url
     const method = request.method
     const statusCode = reply.statusCode.toString()
 
