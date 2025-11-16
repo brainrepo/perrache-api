@@ -37,11 +37,11 @@ describe('ApiKeyService', () => {
   })
 
   describe('hashApiKey', () => {
-    it('should return a 64-character SHA-256 hex hash', () => {
+    it('should return a 64-character HMAC-SHA-256 hex hash', () => {
       const key = service.generateApiKey()
       const hash = service.hashApiKey(key)
 
-      // SHA-256 hex digest is 64 characters
+      // HMAC-SHA-256 hex digest is 64 characters
       expect(hash).toMatch(/^[a-f0-9]{64}$/)
     })
 

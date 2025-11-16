@@ -1,12 +1,30 @@
-import { randomBytes, createHash } from 'crypto'
+import { randomBytes, createHmac } from 'crypto'
 import { db } from '../lib/db.js'
 
 /**
  * API Key Service - handles key generation, storage, validation, and revocation
- * Keys are cryptographically strong (256-bit) and stored as SHA-256 hashes
+ * Keys are cryptographically strong (256-bit) and stored as HMAC-SHA-256 hashes
  */
 export class ApiKeyService {
   private static instance: ApiKeyService | null = null
+  private hmacSecret: string
+
+  private constructor() {
+    this.hmacSecret = this.getHmacSecret()
+  }
+
+  /**
+   * Get the HMAC secret from environment variable
+   * @throws Error if API_KEY_SECRET is not set
+   * @returns The HMAC secret
+   */
+  private getHmacSecret(): string {
+    const secret = process.env.API_KEY_SECRET
+    if (!secret) {
+      throw new Error('API_KEY_SECRET environment variable is not set')
+    }
+    return secret
+  }
 
   static getInstance(): ApiKeyService {
     if (!ApiKeyService.instance) {
@@ -25,12 +43,12 @@ export class ApiKeyService {
   }
 
   /**
-   * Hash an API key using SHA-256
+   * Hash an API key using HMAC-SHA-256 with server-side secret
    * @param key - The plaintext API key
-   * @returns Hex-encoded SHA-256 hash
+   * @returns Hex-encoded HMAC-SHA-256 hash
    */
   hashApiKey(key: string): string {
-    return createHash('sha256').update(key).digest('hex')
+    return createHmac('sha256', this.hmacSecret).update(key).digest('hex')
   }
 
   /**
