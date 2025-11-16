@@ -13,6 +13,9 @@ import authPlugin from './plugins/auth.js'
 import metricsPlugin from './plugins/metrics.js'
 import apiKeyServicePlugin from './plugins/api-key.js'
 import openAPIValidationServicePlugin from './plugins/openapi-validation.js'
+import specMetadataServicePlugin from './plugins/spec-metadata.js'
+import specStorageServicePlugin from './plugins/spec-storage.js'
+import specsRoutes from './routes/specs/index.js'
 
 // Load package.json for version info using createRequire (ES module compatible)
 const require = createRequire(import.meta.url)
@@ -72,6 +75,12 @@ export async function buildApp(): Promise<FastifyInstance> {
   // Register OpenAPI Validation Service plugin (stateless, no dependencies)
   await app.register(openAPIValidationServicePlugin)
 
+  // Register Spec Metadata Service plugin (stateless, no dependencies)
+  await app.register(specMetadataServicePlugin)
+
+  // Register Spec Storage Service plugin (requires db connection)
+  await app.register(specStorageServicePlugin)
+
   // Register CORS middleware BEFORE routes
   await app.register(cors, {
     origin: app.config.CORS_ORIGIN,
@@ -96,7 +105,16 @@ export async function buildApp(): Promise<FastifyInstance> {
           url: `http://localhost:${app.config.PORT}`,
           description: 'Development server'
         }
-      ]
+      ],
+      components: {
+        securitySchemes: {
+          bearerAuth: {
+            type: 'http',
+            scheme: 'bearer',
+            description: 'API key authentication via Bearer token'
+          }
+        }
+      }
     }
   })
 
@@ -234,7 +252,9 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(
     async (protectedContext) => {
       await protectedContext.register(authPlugin)
-      // Future protected routes (e.g., webhook ingestion) will be registered here
+      // Register specs routes (webhook ingestion)
+      await protectedContext.register(specsRoutes, { prefix: '/specs' })
+      // Future protected routes will be registered here
       protectedContext.get('/protected', async (request) => {
         return {
           message: 'Access granted',

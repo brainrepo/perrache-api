@@ -52,8 +52,8 @@ development_status:
 
   epic-2: backlog
   2-1-database-schema-for-api-catalog: done
-  2-2-openapi-spec-validation-service: done 
-  2-3-webhook-api-endpoint-for-spec-upload: ready-for-dev
+  2-2-openapi-spec-validation-service: done
+  2-3-webhook-api-endpoint-for-spec-upload: review
   2-4-endpoint-extraction-storage: backlog
   2-5-multi-environment-version-history-support: backlog
   2-6-async-processing-queue-for-large-specs: backlog
