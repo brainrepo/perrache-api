@@ -1,7 +1,10 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { readFile } from 'fs/promises'
 import { join } from 'path'
-import { OpenAPIValidationService } from '../services/openapi-validation.service.js'
+import {
+  OpenAPIValidationService,
+  type OpenAPIParser
+} from '../services/openapi-validation.service.js'
 import { ValidationErrorCode } from '../types/validation-errors.js'
 
 const fixturesPath = join(__dirname, 'fixtures/openapi-specs')
@@ -399,6 +402,121 @@ describe('OpenAPIValidationService', () => {
       expect((bundled as any).openapi).toBe('3.0.3')
       expect((bundled as any).info.title).toBe('Minimal Valid API')
       expect((bundled as any).paths['/users']).toBeDefined()
+    })
+  })
+
+  describe('Constructor Options and Dependency Injection', () => {
+    it('should accept custom maxSpecSize option', async () => {
+      // Create service with 1KB limit
+      const strictService = new OpenAPIValidationService({
+        maxSpecSize: 1024 // 1KB
+      })
+
+      const spec = {
+        openapi: '3.0.3',
+        info: { title: 'Test', version: '1.0.0', description: 'x'.repeat(2000) },
+        paths: { '/test': { get: { responses: { '200': { description: 'OK' } } } } }
+      }
+      const result = await strictService.validate(spec)
+
+      expect(result.valid).toBe(false)
+      expect(result.errors!.some((e) => e.code === ValidationErrorCode.SPEC_TOO_LARGE)).toBe(true)
+      expect(result.errors![0].message).toContain('exceeds the maximum of')
+    })
+
+    it('should accept custom maxEndpoints option', async () => {
+      // Create service with 5 endpoint limit
+      const strictService = new OpenAPIValidationService({
+        maxEndpoints: 5
+      })
+
+      const paths: Record<string, any> = {}
+      for (let i = 0; i < 10; i++) {
+        paths[`/endpoint${i}`] = {
+          get: { responses: { '200': { description: 'OK' } } }
+        }
+      }
+      const spec = {
+        openapi: '3.0.3',
+        info: { title: 'Test', version: '1.0.0' },
+        paths
+      }
+      const result = await strictService.validate(spec)
+
+      expect(result.valid).toBe(false)
+      expect(result.errors!.some((e) => e.code === ValidationErrorCode.TOO_MANY_ENDPOINTS)).toBe(
+        true
+      )
+      expect(result.errors![0].message).toContain('exceeds the maximum of 5')
+    })
+
+    it('should use default values when no options provided', async () => {
+      const defaultService = new OpenAPIValidationService()
+      const spec = await loadFixture('valid-3.0-minimal.json')
+      const result = await defaultService.validate(spec)
+
+      expect(result.valid).toBe(true)
+    })
+
+    it('should accept injected parser for testing', async () => {
+      const mockSpec = {
+        openapi: '3.0.3',
+        info: { title: 'Test', version: '1.0.0' },
+        paths: { '/test': { get: { responses: { '200': { description: 'OK' } } } } }
+      }
+
+      const mockParser: OpenAPIParser = {
+        bundle: vi.fn().mockResolvedValue(mockSpec),
+        validate: vi.fn().mockResolvedValue(mockSpec)
+      }
+
+      const serviceWithMockParser = new OpenAPIValidationService({}, mockParser)
+      const result = await serviceWithMockParser.validate(mockSpec)
+
+      expect(result.valid).toBe(true)
+      expect(mockParser.bundle).toHaveBeenCalledOnce()
+      expect(mockParser.validate).toHaveBeenCalledOnce()
+    })
+
+    it('should allow overriding both options and parser', async () => {
+      const mockSpec = {
+        openapi: '3.0.3',
+        info: { title: 'Test', version: '1.0.0' },
+        paths: { '/test': { get: { responses: { '200': { description: 'OK' } } } } }
+      }
+
+      const mockParser: OpenAPIParser = {
+        bundle: vi.fn().mockResolvedValue(mockSpec),
+        validate: vi.fn().mockResolvedValue(mockSpec)
+      }
+
+      const customService = new OpenAPIValidationService(
+        { maxSpecSize: 1024 * 1024, maxEndpoints: 100 },
+        mockParser
+      )
+      const result = await customService.validate(mockSpec)
+
+      expect(result.valid).toBe(true)
+      expect(mockParser.bundle).toHaveBeenCalledOnce()
+    })
+
+    it('should handle parser errors through dependency injection', async () => {
+      const mockSpec = {
+        openapi: '3.0.3',
+        info: { title: 'Test', version: '1.0.0' },
+        paths: { '/test': { get: { responses: { '200': { description: 'OK' } } } } }
+      }
+
+      const mockParser: OpenAPIParser = {
+        bundle: vi.fn().mockRejectedValue(new Error('Mock $ref resolution failed')),
+        validate: vi.fn()
+      }
+
+      const serviceWithFailingParser = new OpenAPIValidationService({}, mockParser)
+      const result = await serviceWithFailingParser.validate(mockSpec)
+
+      expect(result.valid).toBe(false)
+      expect(result.errors!.length).toBeGreaterThan(0)
     })
   })
 })

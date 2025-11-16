@@ -10,6 +10,7 @@
  * - TypeScript definitions included
  *
  * @example
+ * // Default configuration
  * const service = new OpenAPIValidationService()
  * const result = await service.validate(specObject)
  * if (!result.valid) {
@@ -17,17 +18,29 @@
  * } else {
  *   const bundledSpec = result.dereferenced
  * }
+ *
+ * @example
+ * // Custom limits
+ * const service = new OpenAPIValidationService({
+ *   maxSpecSize: 5 * 1024 * 1024, // 5MB
+ *   maxEndpoints: 500
+ * })
+ *
+ * @example
+ * // Dependency injection for testing
+ * const mockParser = { bundle: vi.fn(), validate: vi.fn() }
+ * const service = new OpenAPIValidationService({}, mockParser)
  */
 
 import SwaggerParser from '@apidevtools/swagger-parser'
 import type { OpenAPI } from 'openapi-types'
 import { ValidationErrorCode, ValidationErrorMessages } from '../types/validation-errors.js'
 
-/** Maximum spec size in bytes (10MB) */
-const MAX_SPEC_SIZE_BYTES = 10 * 1024 * 1024
+/** Default maximum spec size in bytes (10MB) */
+const DEFAULT_MAX_SPEC_SIZE_BYTES = 10 * 1024 * 1024
 
-/** Maximum number of endpoints allowed per spec */
-const MAX_ENDPOINTS = 1000
+/** Default maximum number of endpoints allowed per spec */
+const DEFAULT_MAX_ENDPOINTS = 1000
 
 /** Valid OpenAPI HTTP methods (lowercase) */
 const VALID_HTTP_METHODS = ['get', 'post', 'put', 'delete', 'patch', 'head', 'options'] as const
@@ -60,10 +73,64 @@ export interface ValidationResult {
 }
 
 /**
+ * Configuration options for OpenAPIValidationService
+ */
+export interface OpenAPIValidationServiceOptions {
+  /** Maximum spec size in bytes (default: 10MB) */
+  maxSpecSize?: number
+  /** Maximum number of endpoints allowed per spec (default: 1000) */
+  maxEndpoints?: number
+}
+
+/**
+ * Parser interface for dependency injection
+ * Matches the subset of SwaggerParser API used by this service
+ */
+export interface OpenAPIParser {
+  bundle(
+    spec: OpenAPI.Document,
+    options?: { resolve?: { external?: boolean } }
+  ): Promise<OpenAPI.Document>
+  validate(spec: OpenAPI.Document): Promise<OpenAPI.Document>
+}
+
+/**
  * OpenAPI Validation Service
  * Validates and dereferences OpenAPI specifications
  */
 export class OpenAPIValidationService {
+  private readonly maxSpecSizeBytes: number
+  private readonly maxEndpoints: number
+  private readonly parser: OpenAPIParser
+
+  /**
+   * Create a new OpenAPIValidationService instance
+   *
+   * @param options - Configuration options for validation limits
+   * @param parser - Parser implementation for dependency injection (defaults to SwaggerParser)
+   *
+   * @example
+   * // Default configuration
+   * const service = new OpenAPIValidationService()
+   *
+   * @example
+   * // Custom limits
+   * const service = new OpenAPIValidationService({
+   *   maxSpecSize: 5 * 1024 * 1024, // 5MB
+   *   maxEndpoints: 500
+   * })
+   *
+   * @example
+   * // Inject mock parser for testing
+   * const mockParser = { bundle: jest.fn(), validate: jest.fn() }
+   * const service = new OpenAPIValidationService({}, mockParser)
+   */
+  constructor(options: OpenAPIValidationServiceOptions = {}, parser: OpenAPIParser = SwaggerParser) {
+    this.maxSpecSizeBytes = options.maxSpecSize ?? DEFAULT_MAX_SPEC_SIZE_BYTES
+    this.maxEndpoints = options.maxEndpoints ?? DEFAULT_MAX_ENDPOINTS
+    this.parser = parser
+  }
+
   /**
    * Validate an OpenAPI specification
    * Performs comprehensive validation including:
@@ -147,12 +214,12 @@ export class OpenAPIValidationService {
   async dereference(spec: object): Promise<object> {
     // Use bundle instead of dereference to avoid circular reference issues
     // bundle() resolves $refs but keeps internal refs for circular references
-    const bundled = await SwaggerParser.bundle(spec as OpenAPI.Document, {
+    const bundled = await this.parser.bundle(spec as OpenAPI.Document, {
       resolve: { external: false }
     })
 
     // Validate the bundled spec to ensure it conforms to OpenAPI schema
-    await SwaggerParser.validate(bundled)
+    await this.parser.validate(bundled)
 
     return bundled
   }
@@ -390,19 +457,20 @@ export class OpenAPIValidationService {
   }
 
   /**
-   * Check spec size does not exceed 10MB limit
+   * Check spec size does not exceed configured limit
    */
   private checkSizeLimits(spec: Record<string, unknown>): ValidationError[] {
     const jsonString = JSON.stringify(spec)
     const sizeInBytes = Buffer.byteLength(jsonString, 'utf8')
 
-    if (sizeInBytes > MAX_SPEC_SIZE_BYTES) {
+    if (sizeInBytes > this.maxSpecSizeBytes) {
       const sizeMB = (sizeInBytes / (1024 * 1024)).toFixed(2)
+      const maxSizeMB = (this.maxSpecSizeBytes / (1024 * 1024)).toFixed(0)
       return [
         {
           path: '',
           message:
-            `Spec size is ${sizeMB}MB, which exceeds the maximum of 10MB. ` +
+            `Spec size is ${sizeMB}MB, which exceeds the maximum of ${maxSizeMB}MB. ` +
             ValidationErrorMessages[ValidationErrorCode.SPEC_TOO_LARGE],
           code: ValidationErrorCode.SPEC_TOO_LARGE
         }
@@ -439,17 +507,17 @@ export class OpenAPIValidationService {
   }
 
   /**
-   * Check endpoint count does not exceed 1000 limit
+   * Check endpoint count does not exceed configured limit
    */
   private checkEndpointCount(spec: Record<string, unknown>): ValidationError[] {
     const count = this.countEndpoints(spec)
 
-    if (count > MAX_ENDPOINTS) {
+    if (count > this.maxEndpoints) {
       return [
         {
           path: 'paths',
           message:
-            `Spec contains ${count} endpoints, which exceeds the maximum of ${MAX_ENDPOINTS}. ` +
+            `Spec contains ${count} endpoints, which exceeds the maximum of ${this.maxEndpoints}. ` +
             ValidationErrorMessages[ValidationErrorCode.TOO_MANY_ENDPOINTS],
           code: ValidationErrorCode.TOO_MANY_ENDPOINTS
         }
