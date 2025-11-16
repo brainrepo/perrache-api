@@ -45,7 +45,7 @@ const start = async () => {
     // Check database connectivity for startup log
     const dbHealthy = await DatabaseService.healthCheck()
 
-    // Log startup information using Pino logger (AC 6)
+    // Log startup information using Pino structured logger
     app.log.info(
       {
         version: packageJson.version,
