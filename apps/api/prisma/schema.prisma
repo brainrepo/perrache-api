@@ -26,3 +26,78 @@ model ApiKey {
   @@index([revokedAt])
   @@map("api_keys")
 }
+
+// HTTP method enumeration for endpoint operations
+enum HttpMethod {
+  GET
+  POST
+  PUT
+  DELETE
+  PATCH
+  HEAD
+  OPTIONS
+}
+
+// API catalog models for storing and querying APIs, versions, and endpoints
+
+model Api {
+  id        String   @id @default(cuid())
+  name      String
+  team      String?
+  owner     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  versions ApiVersion[]
+
+  @@index([name])
+  @@map("apis")
+}
+
+model ApiVersion {
+  id          String   @id @default(cuid())
+  apiId       String
+  version     String
+  environment String   // String type per ADR-009 for enterprise flexibility
+  specJson    Json
+  uploadedAt  DateTime @default(now())
+  uploadedBy  String?  // Reference to API key name
+
+  api       Api        @relation(fields: [apiId], references: [id], onDelete: Cascade)
+  endpoints Endpoint[]
+
+  @@index([apiId, environment])
+  @@index([uploadedAt])
+  @@map("api_versions")
+}
+
+model Endpoint {
+  id           String     @id @default(cuid())
+  apiVersionId String
+  path         String
+  method       HttpMethod
+
+  // Dual embeddings for semantic search (pgvector 1536 dimensions for OpenAI text-embedding-3-small)
+  domainObjectEmbedding Unsupported("vector(1536)")?
+  fullEndpointEmbedding Unsupported("vector(1536)")?
+
+  // OpenAPI metadata for embedding generation
+  summary        String?
+  description    String?
+  operationId    String?
+  tags           String[]
+  requestSchema  Json?
+  responseSchema Json?
+  parameters     Json?
+  headers        Json?
+
+  deprecated Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  apiVersion ApiVersion @relation(fields: [apiVersionId], references: [id], onDelete: Cascade)
+
+  @@unique([apiVersionId, path, method])
+  @@index([apiVersionId])
+  @@index([deprecated])
+  @@map("endpoints")
+}

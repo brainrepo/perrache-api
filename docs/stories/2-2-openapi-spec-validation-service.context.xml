@@ -1,0 +1,230 @@
+<story-context id="2-2-openapi-spec-validation-service" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>2</storyId>
+    <title>OpenAPI Spec Validation Service</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-16</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/2-2-openapi-spec-validation-service.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>backend developer</asA>
+    <iWant>a service that validates OpenAPI specs before accepting them</iWant>
+    <soThat>only well-formed specs are ingested into the catalog</soThat>
+    <tasks>
+      <task id="1">Install and Configure OpenAPI Validation Library</task>
+      <task id="2">Create OpenAPI Validation Service</task>
+      <task id="3">Implement Size and Complexity Limits</task>
+      <task id="4">Create Error Code Enumeration</task>
+      <task id="5">Write Unit Tests for Validation Service</task>
+      <task id="6">Create Fastify Plugin for Validation Service</task>
+      <task id="7">Add Integration Test with Sample Specs</task>
+      <task id="8">Document Service API and Usage</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC1">Service validates JSON structure, OpenAPI version (3.0.x/3.1.x), required fields (openapi, info, paths), paths contains endpoints, valid HTTP methods</criterion>
+    <criterion id="AC2">Service validates $ref resolution: all refs resolvable, circular refs detected, dereferencing completes</criterion>
+    <criterion id="AC3">Validation errors return structured response: { valid: false, errors: [{ path, message, code }] }</criterion>
+    <criterion id="AC4">Valid specs return: { valid: true, dereferenced: bundled_spec }</criterion>
+    <criterion id="AC5">$refs resolved recursively and bundled into single spec before storage</criterion>
+    <criterion id="AC6">Limits enforced: Max spec size 10MB, Max endpoints per spec 1000</criterion>
+    <criterion id="AC7">Validation service exported for use in other modules via Fastify plugin</criterion>
+    <criterion id="AC8">Comprehensive error messages guide users to fix validation issues</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>FR-1.4 Spec Validation</section>
+        <snippet>Validates OpenAPI specs before ingestion to ensure only well-formed specs enter the catalog. Supports 3.0.x and 3.1.x versions.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Implementation Patterns - Error Handling</section>
+        <snippet>Standardized error responses: { error: { code, message, details } }. Custom error classes with status codes. Global error handler formats all responses consistently.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Project Structure</section>
+        <snippet>Services in apps/api/src/services/, plugins in apps/api/src/plugins/, tests in apps/api/src/__tests__/. Fastify plugin pattern for service injection.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic Definitions</title>
+        <section>Epic 2 - Story 2.2</section>
+        <snippet>OpenAPI Spec Validation Service: Validate 3.0.x/3.1.x specs, check required fields, resolve $refs, enforce size limits (10MB, 1000 endpoints).</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/2-1-database-schema-for-api-catalog.md</path>
+        <title>Story 2.1 - Database Schema</title>
+        <section>Dev Notes</section>
+        <snippet>ApiVersion.specJson stores dereferenced OpenAPI spec as JSON. Validation service must return bundled spec (no external $refs) for storage.</snippet>
+      </doc>
+    </docs>
+
+    <code>
+      <artifact>
+        <path>apps/api/src/services/api-key.service.ts</path>
+        <kind>service</kind>
+        <symbol>ApiKeyService</symbol>
+        <lines>1-121</lines>
+        <reason>Reference service pattern: class export, constructor with config, JSDoc comments, async methods, error handling with custom statusCode property, uses db from lib/db.js</reason>
+      </artifact>
+      <artifact>
+        <path>apps/api/src/plugins/api-key.ts</path>
+        <kind>plugin</kind>
+        <symbol>apiKeyServicePlugin</symbol>
+        <lines>N/A</lines>
+        <reason>Reference plugin pattern: use fastify-plugin wrapper, decorate fastify instance with service, TypeScript declaration module augmentation</reason>
+      </artifact>
+      <artifact>
+        <path>apps/api/src/app.ts</path>
+        <kind>application</kind>
+        <symbol>buildApp</symbol>
+        <lines>1-246</lines>
+        <reason>Main app setup showing plugin registration order, error handler pattern, route registration. New validation plugin should be registered here.</reason>
+      </artifact>
+      <artifact>
+        <path>apps/api/src/lib/db.ts</path>
+        <kind>utility</kind>
+        <symbol>db, DatabaseService</symbol>
+        <lines>N/A</lines>
+        <reason>Database client export pattern. New service may not need DB access (stateless validation).</reason>
+      </artifact>
+      <artifact>
+        <path>apps/api/src/__tests__/api-key.service.test.ts</path>
+        <kind>test</kind>
+        <symbol>describe('ApiKeyService')</symbol>
+        <lines>N/A</lines>
+        <reason>Reference test pattern for services: Vitest describe/it blocks, beforeEach/afterEach setup, service instantiation in tests</reason>
+      </artifact>
+    </code>
+
+    <dependencies>
+      <node>
+        <package name="fastify" version="^5.0.0">Core web framework - validation service will be injected via plugin</package>
+        <package name="fastify-plugin" version="^5.1.0">Plugin encapsulation - required for service plugin wrapper</package>
+        <package name="@sinclair/typebox" version="^0.34.41">TypeScript JSON Schema - used for request/response validation</package>
+        <package name="zod" version="^4.1.12">Schema validation library - alternative to TypeBox</package>
+        <package name="vitest" version="^4.0.8">Test runner - used for unit and integration tests</package>
+        <package name="typescript" version="^5.3.3">TypeScript compiler - strict mode enabled</package>
+        <package name="@prisma/client" version="^6.19.0">Database client - though validation service is stateless</package>
+      </node>
+      <toInstall>
+        <package name="@readme/openapi-parser" version="latest">Recommended: OpenAPI validation and $ref dereferencing</package>
+        <package name="@apidevtools/swagger-parser" version="latest">Alternative: OpenAPI validation with bundling support</package>
+        <package name="@types/swagger-parser" version="latest">TypeScript types for swagger-parser if chosen</package>
+      </toInstall>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>MUST use established validation library (not custom JSON Schema validation)</constraint>
+    <constraint>MUST support both OpenAPI 3.0.x and 3.1.x specifications</constraint>
+    <constraint>MUST dereference (bundle) all $refs before returning</constraint>
+    <constraint>MUST follow Fastify plugin pattern for service injection (fastify-plugin wrapper)</constraint>
+    <constraint>MUST provide structured error responses matching architecture error format: { valid, errors: [{ path, message, code }] }</constraint>
+    <constraint>MUST handle edge cases: empty objects, null values, malformed JSON</constraint>
+    <constraint>MUST NOT perform database operations (validation is stateless)</constraint>
+    <constraint>Service files in apps/api/src/services/*.service.ts naming convention</constraint>
+    <constraint>Plugin files in apps/api/src/plugins/*.ts naming convention</constraint>
+    <constraint>Test files in apps/api/src/__tests__/*.test.ts naming convention</constraint>
+    <constraint>Use pnpm for package management (pnpm --filter @perrache/api add ...)</constraint>
+    <constraint>ES modules (type: module in package.json) - use .js extensions in imports</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>ValidationResult</name>
+      <kind>TypeScript interface</kind>
+      <signature>
+interface ValidationResult {
+  valid: boolean
+  errors?: ValidationError[]
+  dereferenced?: object
+}
+      </signature>
+      <path>apps/api/src/services/openapi-validation.service.ts (to be created)</path>
+    </interface>
+    <interface>
+      <name>ValidationError</name>
+      <kind>TypeScript interface</kind>
+      <signature>
+interface ValidationError {
+  path: string
+  message: string
+  code: string
+}
+      </signature>
+      <path>apps/api/src/services/openapi-validation.service.ts (to be created)</path>
+    </interface>
+    <interface>
+      <name>OpenAPIValidationService</name>
+      <kind>Service class</kind>
+      <signature>
+class OpenAPIValidationService {
+  async validate(spec: unknown): Promise&lt;ValidationResult&gt;
+  async dereference(spec: object): Promise&lt;object&gt;
+  private checkRequiredFields(spec: object): ValidationError[]
+  private checkOpenAPIVersion(spec: object): ValidationError[]
+  private checkPaths(spec: object): ValidationError[]
+  private checkOperations(spec: object): ValidationError[]
+  private checkSizeLimits(spec: object): ValidationError[]
+  private countEndpoints(spec: object): number
+}
+      </signature>
+      <path>apps/api/src/services/openapi-validation.service.ts (to be created)</path>
+    </interface>
+    <interface>
+      <name>Fastify Plugin Declaration</name>
+      <kind>TypeScript module augmentation</kind>
+      <signature>
+declare module 'fastify' {
+  interface FastifyInstance {
+    openAPIValidationService: OpenAPIValidationService
+  }
+}
+      </signature>
+      <path>apps/api/src/plugins/openapi-validation.ts (to be created)</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Vitest test runner with TypeScript support. Tests organized by describe blocks for service/component being tested. Use beforeEach/afterEach for setup and teardown. Test files colocated in apps/api/src/__tests__/ directory. Integration tests use app.inject() pattern. Unit tests instantiate services directly with mocked dependencies. Run with: pnpm --filter @perrache/api test
+    </standards>
+    <locations>
+      <location>apps/api/src/__tests__/*.test.ts</location>
+      <location>apps/api/src/__tests__/fixtures/ (for test data)</location>
+    </locations>
+    <ideas>
+      <idea acRef="AC1">Test valid OpenAPI 3.0.x spec returns valid: true</idea>
+      <idea acRef="AC1">Test valid OpenAPI 3.1.x spec returns valid: true</idea>
+      <idea acRef="AC1">Test missing 'openapi' field returns MISSING_REQUIRED_FIELD error</idea>
+      <idea acRef="AC1">Test missing 'info.title' field returns MISSING_REQUIRED_FIELD error</idea>
+      <idea acRef="AC1">Test missing 'info.version' field returns MISSING_REQUIRED_FIELD error</idea>
+      <idea acRef="AC1">Test empty paths object returns NO_PATHS_DEFINED error</idea>
+      <idea acRef="AC1">Test invalid HTTP method returns INVALID_HTTP_METHOD error</idea>
+      <idea acRef="AC1">Test unsupported OpenAPI version (2.0) returns INVALID_OPENAPI_VERSION error</idea>
+      <idea acRef="AC2">Test spec with internal $refs successfully dereferences</idea>
+      <idea acRef="AC2">Test unresolvable $ref returns UNRESOLVABLE_REF error with path</idea>
+      <idea acRef="AC2">Test circular $refs are detected and handled</idea>
+      <idea acRef="AC3">Test error response structure matches { valid: false, errors: [] }</idea>
+      <idea acRef="AC3">Test error path correctly identifies location in spec</idea>
+      <idea acRef="AC4">Test valid spec returns dereferenced (bundled) object</idea>
+      <idea acRef="AC5">Test all $refs are inlined after dereferencing</idea>
+      <idea acRef="AC6">Test spec &gt; 10MB returns SPEC_TOO_LARGE error</idea>
+      <idea acRef="AC6">Test spec with &gt; 1000 endpoints returns TOO_MANY_ENDPOINTS error</idea>
+      <idea acRef="AC7">Test service accessible via fastify.openAPIValidationService after plugin registration</idea>
+      <idea acRef="AC8">Test error messages are actionable (mention what to fix)</idea>
+    </ideas>
+  </tests>
+</story-context>
