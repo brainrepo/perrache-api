@@ -5,9 +5,10 @@ import { db } from '../lib/db'
 describe('ApiKeyService', () => {
   let service: ApiKeyService
   const createdKeyIds: string[] = []
+  const testSecret = process.env.API_KEY_SECRET || 'test-secret-key-for-hmac-sha256-hashing-minimum-32-chars'
 
   beforeEach(() => {
-    service = ApiKeyService.getInstance()
+    service = new ApiKeyService(testSecret)
   })
 
   afterEach(async () => {
@@ -18,6 +19,22 @@ describe('ApiKeyService', () => {
       })
       createdKeyIds.length = 0
     }
+  })
+
+  describe('constructor', () => {
+    it('should throw error when secret is not provided', () => {
+      expect(() => new ApiKeyService('')).toThrow('API_KEY_SECRET must be at least 32 characters')
+    })
+
+    it('should throw error when secret is too short', () => {
+      expect(() => new ApiKeyService('short-secret')).toThrow('API_KEY_SECRET must be at least 32 characters')
+    })
+
+    it('should create instance with valid secret', () => {
+      const validSecret = 'this-is-a-valid-secret-key-32ch'
+      const instance = new ApiKeyService(validSecret)
+      expect(instance).toBeInstanceOf(ApiKeyService)
+    })
   })
 
   describe('generateApiKey', () => {
@@ -37,11 +54,11 @@ describe('ApiKeyService', () => {
   })
 
   describe('hashApiKey', () => {
-    it('should return a 64-character SHA-256 hex hash', () => {
+    it('should return a 64-character HMAC-SHA-256 hex hash', () => {
       const key = service.generateApiKey()
       const hash = service.hashApiKey(key)
 
-      // SHA-256 hex digest is 64 characters
+      // HMAC-SHA-256 hex digest is 64 characters
       expect(hash).toMatch(/^[a-f0-9]{64}$/)
     })
 
@@ -58,6 +75,18 @@ describe('ApiKeyService', () => {
       const hash2 = service.hashApiKey(key)
 
       expect(hash1).toEqual(hash2)
+    })
+
+    it('should produce different hashes with different secrets', () => {
+      const key = service.generateApiKey()
+      const hash1 = service.hashApiKey(key)
+
+      // Create service with different secret
+      const differentSecret = 'another-secret-key-for-testing-32-chars'
+      const service2 = new ApiKeyService(differentSecret)
+      const hash2 = service2.hashApiKey(key)
+
+      expect(hash1).not.toEqual(hash2)
     })
   })
 

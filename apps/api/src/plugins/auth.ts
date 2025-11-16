@@ -1,6 +1,5 @@
 import fp from 'fastify-plugin'
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
-import { apiKeyService } from '../services/api-key.service.js'
 
 // Extend Fastify Request interface
 declare module 'fastify' {
@@ -46,7 +45,7 @@ async function authPlugin(fastify: FastifyInstance): Promise<void> {
     }
 
     // Validate token against database
-    const validationResult = await apiKeyService.validateApiKey(token)
+    const validationResult = await fastify.apiKeyService.validateApiKey(token)
 
     if (!validationResult) {
       reply.status(401).send({
