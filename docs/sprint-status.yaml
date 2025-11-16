@@ -47,7 +47,7 @@ development_status:
   1-4-nextjs-frontend-application-setup: done
   1-5-docker-containerization-deployment-configuration: done
   1-6-api-key-authentication-system: done
-  1-7-observability-monitoring-setup: backlog
+  1-7-observability-monitoring-setup: in-progress
   epic-1-retrospective: optional
 
   epic-2: backlog

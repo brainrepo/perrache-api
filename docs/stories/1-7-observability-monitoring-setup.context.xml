@@ -1,0 +1,229 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>7</storyId>
+    <title>Observability and Monitoring Setup</title>
+    <status>ready-for-dev</status>
+    <generatedAt>2025-11-15</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/1-7-observability-monitoring-setup.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>DevOps engineer</asA>
+    <iWant>structured logging, metrics exposure, and monitoring endpoints</iWant>
+    <soThat>we can observe application health and debug issues in production</soThat>
+    <tasks>
+      <task id="1" name="Enhanced Logging Configuration" acs="1,2,3,6,7">
+        <subtask>Verify Pino logger outputs structured JSON with required fields</subtask>
+        <subtask>Add LOG_LEVEL to .env.example with documentation</subtask>
+        <subtask>Configure Pino redaction for sensitive fields</subtask>
+        <subtask>Add startup logging in server.ts</subtask>
+        <subtask>Ensure logs write to stdout only</subtask>
+        <subtask>Add integration test for log format</subtask>
+      </task>
+      <task id="2" name="Correlation ID Response Header" acs="8">
+        <subtask>Expose request.id in X-Request-ID response header</subtask>
+        <subtask>Add onSend hook to set header</subtask>
+        <subtask>Add integration test for header presence</subtask>
+      </task>
+      <task id="3" name="Prometheus Metrics Endpoint" acs="4">
+        <subtask>Install prom-client dependency</subtask>
+        <subtask>Create apps/api/src/plugins/metrics.ts</subtask>
+        <subtask>Initialize default metrics and custom metrics</subtask>
+        <subtask>Add onRequest and onResponse hooks for collection</subtask>
+        <subtask>Register GET /metrics route</subtask>
+        <subtask>Exclude /metrics and /health from collection</subtask>
+        <subtask>Register plugin in app.ts</subtask>
+        <subtask>Add integration test for Prometheus format</subtask>
+      </task>
+      <task id="4" name="Enhanced Health Check" acs="5">
+        <subtask>Ensure version from package.json programmatically</subtask>
+        <subtask>Add uptime field (optional)</subtask>
+        <subtask>Add integration test for response structure</subtask>
+      </task>
+      <task id="5" name="Environment Variable Documentation" acs="3,6">
+        <subtask>Update .env.example with LOG_LEVEL</subtask>
+        <subtask>Verify LOG_LEVEL already in env.ts</subtask>
+        <subtask>Ensure startup logs respect LOG_LEVEL</subtask>
+      </task>
+      <task id="6" name="Documentation and Testing" acs="1-8">
+        <subtask>Add comprehensive integration tests</subtask>
+        <subtask>Run full test suite</subtask>
+        <subtask>Document observability setup in README</subtask>
+      </task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="1">Structured JSON logging with timestamp, correlation ID, method, path, status, latency</criterion>
+    <criterion id="2">No PII or sensitive data in logs (API keys, auth tokens, passwords)</criterion>
+    <criterion id="3">Log levels configurable via LOG_LEVEL environment variable</criterion>
+    <criterion id="4">GET /metrics exposes Prometheus-compatible metrics (request count, latency histograms, error rates)</criterion>
+    <criterion id="5">GET /health returns detailed status with services breakdown and version</criterion>
+    <criterion id="6">Startup logs include version, environment, and configuration summary</criterion>
+    <criterion id="7">Logs written to stdout (Docker-friendly)</criterion>
+    <criterion id="8">X-Request-ID correlation ID in response headers</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/tech-spec-epic-1.md</path>
+        <title>Epic 1 Technical Specification</title>
+        <section>Non-Functional Requirements - Observability</section>
+        <snippet>NFR-O1 through NFR-O6 detail structured logging with Pino, request correlation IDs, Prometheus metrics endpoint, and health check requirements. Logs must be JSON format with timestamp, level, requestId, message fields.</snippet>
+      </doc>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>NFR-O1-O3</section>
+        <snippet>Observability requirements including structured logging, Prometheus metrics, and monitoring alerting baseline for production operations.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Observability Strategy</section>
+        <snippet>Pino for structured JSON logging, prom-client for Prometheus metrics, request correlation via X-Request-ID headers for distributed tracing.</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/1-6-api-key-authentication-system.md</path>
+        <title>Previous Story Reference</title>
+        <section>Dev Agent Record - Completion Notes</section>
+        <snippet>Plugin pattern using fastify-plugin for encapsulation, testing with app.inject(), singleton service pattern. Use same patterns for metrics plugin.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>apps/api/src/app.ts</path>
+        <kind>application-bootstrap</kind>
+        <symbol>buildApp</symbol>
+        <lines>16-186</lines>
+        <reason>Main application setup with existing Pino logger configuration, genReqId for correlation IDs, error handler. This is where metrics plugin will be registered and logging enhanced.</reason>
+      </artifact>
+      <artifact>
+        <path>apps/api/src/plugins/auth.ts</path>
+        <kind>fastify-plugin</kind>
+        <symbol>authPlugin</symbol>
+        <lines>1-70</lines>
+        <reason>Reference implementation for Fastify plugin pattern using fp() wrapper, addHook for request lifecycle, and decorateRequest. Follow this pattern for metrics.ts.</reason>
+      </artifact>
+      <artifact>
+        <path>apps/api/src/plugins/rate-limit.ts</path>
+        <kind>fastify-plugin</kind>
+        <symbol>rateLimitPlugin</symbol>
+        <lines>1-80</lines>
+        <reason>Another plugin pattern reference showing global middleware registration and configuration via environment variables.</reason>
+      </artifact>
+      <artifact>
+        <path>apps/api/src/lib/env.ts</path>
+        <kind>utility</kind>
+        <symbol>validateEnvironment</symbol>
+        <lines>1-43</lines>
+        <reason>LOG_LEVEL already defined in EnvironmentConfig interface. Use this for log level configuration. Returns env.LOG_LEVEL which can be used in Pino config.</reason>
+      </artifact>
+      <artifact>
+        <path>apps/api/src/lib/db.ts</path>
+        <kind>service</kind>
+        <symbol>DatabaseService</symbol>
+        <lines>1-50</lines>
+        <reason>Database health check implementation. Use healthCheck() method pattern for observability checks.</reason>
+      </artifact>
+      <artifact>
+        <path>apps/api/src/__tests__/fastify.test.ts</path>
+        <kind>test</kind>
+        <symbol>Fastify server tests</symbol>
+        <lines>1-100</lines>
+        <reason>Integration test patterns using app.inject() for HTTP testing. Follow same patterns for metrics and observability tests.</reason>
+      </artifact>
+      <artifact>
+        <path>apps/api/src/__tests__/auth-plugin.test.ts</path>
+        <kind>test</kind>
+        <symbol>Auth plugin integration tests</symbol>
+        <lines>1-150</lines>
+        <reason>Testing pattern for Fastify plugins. Use similar approach for metrics plugin tests.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <node>
+        <package name="fastify" version="^5.0.0" />
+        <package name="pino" version="^8.17.2" installed="true" />
+        <package name="pino-pretty" version="^10.3.1" installed="true" />
+        <package name="prom-client" version="^15.x" installed="false" note="MUST INSTALL" />
+        <package name="fastify-plugin" version="^5.1.0" installed="true" />
+        <package name="@prisma/client" version="^6.19.0" />
+        <package name="vitest" version="^4.0.8" dev="true" />
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="logging">Logs MUST write to stdout only (no file-based logging per 12-factor app)</constraint>
+    <constraint type="security">NO PII or sensitive data in logs - use Pino redaction for authorization headers, passwords, api keys</constraint>
+    <constraint type="format">Metrics endpoint MUST be Prometheus-compatible (text/plain format)</constraint>
+    <constraint type="runtime">Log levels configurable at runtime via LOG_LEVEL environment variable</constraint>
+    <constraint type="performance">Health check must respond in less than 100ms (NFR-P1)</constraint>
+    <constraint type="pattern">Use fastify-plugin wrapper (fp) for proper encapsulation</constraint>
+    <constraint type="structure">New plugin at apps/api/src/plugins/metrics.ts following auth.ts pattern</constraint>
+    <constraint type="testing">Integration tests required for all ACs using Vitest and app.inject()</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>GET /metrics</name>
+      <kind>REST endpoint</kind>
+      <signature>GET /metrics -> text/plain (Prometheus format)</signature>
+      <path>apps/api/src/plugins/metrics.ts (to be created)</path>
+    </interface>
+    <interface>
+      <name>GET /health</name>
+      <kind>REST endpoint</kind>
+      <signature>GET /health -> JSON { status, timestamp, services, version }</signature>
+      <path>apps/api/src/app.ts:131-170</path>
+    </interface>
+    <interface>
+      <name>X-Request-ID Header</name>
+      <kind>HTTP response header</kind>
+      <signature>X-Request-ID: {request.id}</signature>
+      <path>apps/api/src/app.ts (onSend hook to add)</path>
+    </interface>
+    <interface>
+      <name>Pino Logger Configuration</name>
+      <kind>Fastify logger options</kind>
+      <signature>Fastify({ logger: { level, redact, transport } })</signature>
+      <path>apps/api/src/app.ts:21-34</path>
+    </interface>
+    <interface>
+      <name>validateEnvironment</name>
+      <kind>function</kind>
+      <signature>validateEnvironment(): EnvironmentConfig (includes LOG_LEVEL)</signature>
+      <path>apps/api/src/lib/env.ts:18-42</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Vitest for test framework with integration tests using Fastify's app.inject() method for HTTP testing without starting server.
+      Tests located in apps/api/src/__tests__/ directory. Follow existing patterns from fastify.test.ts, auth-plugin.test.ts, rate-limit.test.ts.
+      Mock database and external services as needed. Use beforeEach/afterEach for setup/teardown.
+      Test files should be named descriptively: metrics.test.ts, observability.test.ts.
+    </standards>
+    <locations>
+      <location>apps/api/src/__tests__/</location>
+      <location>apps/api/src/__tests__/metrics.test.ts</location>
+      <location>apps/api/src/__tests__/observability.test.ts</location>
+    </locations>
+    <ideas>
+      <idea ac="1">Test that requests generate structured JSON logs with all required fields (timestamp, reqId, method, url, statusCode, responseTime)</idea>
+      <idea ac="2">Test that authorization headers and sensitive fields are redacted from logs (check log output does not contain actual API keys)</idea>
+      <idea ac="3">Test that LOG_LEVEL environment variable controls which log levels are output (set to warn, verify no info logs)</idea>
+      <idea ac="4">Test GET /metrics returns Content-Type: text/plain with Prometheus format containing http_requests_total and http_request_duration_seconds</idea>
+      <idea ac="4">Test that metrics increment correctly after requests (make N requests, check counter value)</idea>
+      <idea ac="5">Test GET /health returns status, timestamp, services.database, and version fields</idea>
+      <idea ac="6">Test startup logs include application version and NODE_ENV</idea>
+      <idea ac="7">Verify logs use stdout transport (check logger configuration)</idea>
+      <idea ac="8">Test all responses include X-Request-ID header matching request.id</idea>
+      <idea ac="8">Test correlation ID appears in both request log and response header</idea>
+    </ideas>
+  </tests>
+</story-context>
