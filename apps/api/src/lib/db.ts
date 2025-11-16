@@ -64,6 +64,21 @@ class DatabaseService {
       return false
     }
   }
+
+  /**
+   * Get Prisma metrics in Prometheus format
+   * Requires the 'metrics' preview feature to be enabled in schema.prisma
+   * @returns Prometheus-formatted metrics string
+   */
+  static async getMetrics(): Promise<string> {
+    const db = DatabaseService.getInstance()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const client = db as any
+    if (typeof client.$metrics?.prometheus === 'function') {
+      return client.$metrics.prometheus()
+    }
+    return ''
+  }
 }
 
 export const db = DatabaseService.getInstance()
