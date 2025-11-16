@@ -1,0 +1,350 @@
+<story-context id="2-3-webhook-api-endpoint-for-spec-upload" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>3</storyId>
+    <title>Webhook API Endpoint for Spec Upload</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-16</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/2-3-webhook-api-endpoint-for-spec-upload.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>API consumer (CI/CD pipeline)</asA>
+    <iWant>a webhook endpoint to POST OpenAPI specs with API key authentication</iWant>
+    <soThat>specs are automatically cataloged on every deployment</soThat>
+    <tasks>
+      <task id="1">Create Webhook Route Handler</task>
+      <task id="2">Integrate API Key Authentication</task>
+      <task id="3">Integrate OpenAPI Validation Service</task>
+      <task id="4">Implement API Metadata Extraction Service</task>
+      <task id="5">Implement Spec Storage Service</task>
+      <task id="6">Implement Sync/Async Processing Logic</task>
+      <task id="7">Implement Request Logging</task>
+      <task id="8">Write Unit Tests</task>
+      <task id="9">Write Integration Tests</task>
+      <task id="10">Document API Endpoint</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC1">POST /api/v1/specs/openapi endpoint accepts JSON body with query params version and environment, Authorization header</criterion>
+    <criterion id="AC2">Authentication middleware validates API key: 401 for missing/invalid, 403 for revoked, metadata in request context</criterion>
+    <criterion id="AC3">Spec validation service checks structure, OpenAPI version (3.0.x/3.1.x), required fields, dereferences $refs</criterion>
+    <criterion id="AC4">Invalid specs return 400 with structured error: { error: { code: 'INVALID_SPEC', message, details: { errors } } }</criterion>
+    <criterion id="AC5">Valid specs stored in api_versions table with api_id, version, environment, spec_json, uploaded_at, uploaded_by</criterion>
+    <criterion id="AC6">API metadata extracted from OpenAPI info: name (title), team (x-team), owner (x-owner), version</criterion>
+    <criterion id="AC7">Small specs (&lt;100 endpoints) return 200 OK with { api_id, version_id, status: 'processed', endpoints_count }</criterion>
+    <criterion id="AC8">Large specs (&gt;=100 endpoints) return 202 Accepted with { api_id, version_id, job_id, status: 'queued' }</criterion>
+    <criterion id="AC9">Query parameters: version (default 3.1), environment (default dev), stored as string not enum</criterion>
+    <criterion id="AC10">Correlation ID (X-Request-ID) included in response headers for tracing</criterion>
+    <criterion id="AC11">Rate limiting enforced (100 requests/hour per key) via API key middleware</criterion>
+    <criterion id="AC12">Logging includes: API name, environment, spec size bytes, endpoint count, API key ID, correlation ID, timing</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>FR-1.1 Webhook-Based Spec Upload</section>
+        <snippet>Zero-effort integration through automated spec uploads from CI/CD pipelines. Supports multiple environments and version tracking.</snippet>
+      </doc>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>NFR-P2 Webhook Ingestion</section>
+        <snippet>System must support 100 concurrent webhook uploads with &lt;5s response time for typical specs. Large specs queued for async processing.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>API Contracts - Spec Ingestion</section>
+        <snippet>POST /api/v1/specs/openapi with Bearer token auth. Returns 201 for processed specs, 202 for queued large specs. Includes jobId for async processing.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Implementation Patterns - Route Structure</section>
+        <snippet>Routes registered via Fastify plugins with prefix pattern. Services injected via decorators. TypeBox schemas for request validation.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>ADR-009 Environment as String</section>
+        <snippet>Environment stored as configurable string (not enum) to support diverse enterprise pipelines: dev, staging, prod, qa, canary, etc.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic Definitions</title>
+        <section>Epic 2 - Story 2.3</section>
+        <snippet>Webhook API endpoint accepting OpenAPI specs with API key auth. Validates, extracts metadata, stores in database. Handles sync/async processing based on size.</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/2-2-openapi-spec-validation-service.md</path>
+        <title>Story 2.2 - OpenAPI Validation Service</title>
+        <section>Service Interface</section>
+        <snippet>OpenAPIValidationService.validate() returns ValidationResult { valid, errors?, dereferenced? }. Dereferenced spec is bundled with resolved $refs, ready for storage.</snippet>
+      </doc>
+    </docs>
+
+    <code>
+      <artifact>
+        <path>apps/api/src/plugins/auth.ts</path>
+        <kind>plugin</kind>
+        <symbol>authPlugin</symbol>
+        <lines>1-70</lines>
+        <reason>API key authentication hook. Validates Bearer token, returns 401/403, decorates request.apiKeyId. This story reuses this middleware.</reason>
+      </artifact>
+      <artifact>
+        <path>apps/api/src/services/api-key.service.ts</path>
+        <kind>service</kind>
+        <symbol>ApiKeyService.validateApiKey</symbol>
+        <lines>102-119</lines>
+        <reason>Key validation method returning { id } or null. Auth plugin uses this. New webhook route will leverage existing auth flow.</reason>
+      </artifact>
+      <artifact>
+        <path>apps/api/src/app.ts</path>
+        <kind>application</kind>
+        <symbol>buildApp</symbol>
+        <lines>227-242</lines>
+        <reason>Protected routes registration pattern with auth plugin encapsulation. New specs route should be registered in protected context.</reason>
+      </artifact>
+      <artifact>
+        <path>apps/api/src/plugins/api-key.ts</path>
+        <kind>plugin</kind>
+        <symbol>apiKeyServicePlugin</symbol>
+        <lines>N/A</lines>
+        <reason>Service plugin registration pattern. New services (metadata, storage) follow same pattern.</reason>
+      </artifact>
+      <artifact>
+        <path>apps/api/src/routes/admin/keys.ts</path>
+        <kind>route</kind>
+        <symbol>adminKeysRoutes</symbol>
+        <lines>N/A</lines>
+        <reason>Reference route implementation pattern with Fastify schema validation and JSON response.</reason>
+      </artifact>
+      <artifact>
+        <path>apps/api/prisma/schema.prisma</path>
+        <kind>schema</kind>
+        <symbol>Api, ApiVersion, Endpoint</symbol>
+        <lines>43-103</lines>
+        <reason>Database models for storing specs. Api has name/team/owner. ApiVersion has specJson, environment (string), uploadedBy. Endpoint stores path/method.</reason>
+      </artifact>
+      <artifact>
+        <path>apps/api/src/lib/db.ts</path>
+        <kind>utility</kind>
+        <symbol>db, DatabaseService</symbol>
+        <lines>N/A</lines>
+        <reason>Prisma client instance. Storage service will use db.api and db.apiVersion for database operations.</reason>
+      </artifact>
+      <artifact>
+        <path>apps/api/src/__tests__/auth-plugin.test.ts</path>
+        <kind>test</kind>
+        <symbol>describe('Auth Plugin')</symbol>
+        <lines>N/A</lines>
+        <reason>Test pattern for auth scenarios. New webhook tests should cover similar 401/403 cases.</reason>
+      </artifact>
+    </code>
+
+    <dependencies>
+      <node>
+        <package name="fastify" version="^5.0.0">Core framework - route registration, schema validation, lifecycle hooks</package>
+        <package name="fastify-plugin" version="^5.1.0">Plugin encapsulation for services and routes</package>
+        <package name="@sinclair/typebox" version="^0.34.41">TypeBox for request/response schema definitions with TypeScript inference</package>
+        <package name="@prisma/client" version="^6.19.0">Database operations - Api.create, ApiVersion.create, findFirst</package>
+        <package name="@fastify/rate-limit" version="^10.3.0">Rate limiting middleware already configured (100/hour per key)</package>
+        <package name="@fastify/swagger" version="^9.6.0">OpenAPI doc generation from route schemas</package>
+        <package name="@fastify/swagger-ui" version="^5.2.3">API documentation UI at /docs</package>
+        <package name="vitest" version="^4.0.8">Test runner for unit and integration tests</package>
+        <package name="typescript" version="^5.3.3">TypeScript with strict mode</package>
+        <package name="pino" version="^8.17.2">Structured JSON logging via fastify.log</package>
+      </node>
+      <fromStory22>
+        <package name="OpenAPIValidationService">Service to be injected via fastify.openAPIValidationService</package>
+        <package name="ValidationResult">Interface: { valid, errors?, dereferenced? }</package>
+        <package name="ValidationError">Interface: { path, message, code }</package>
+      </fromStory22>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>MUST use existing API key authentication middleware from Story 1.6 (apps/api/src/plugins/auth.ts)</constraint>
+    <constraint>MUST use OpenAPIValidationService from Story 2.2 (fastify.openAPIValidationService decorator)</constraint>
+    <constraint>MUST follow Fastify route plugin pattern with schema validation</constraint>
+    <constraint>MUST provide structured error responses: { error: { code, message, details? } }</constraint>
+    <constraint>MUST NOT store plaintext API keys in logs or responses - only key ID</constraint>
+    <constraint>MUST handle both sync (&lt;100 endpoints) and async (&gt;=100 endpoints) processing paths</constraint>
+    <constraint>MUST store environment as string (not enum) per ADR-009</constraint>
+    <constraint>MUST use correlation IDs (request.id) for request tracing per NFR-O1</constraint>
+    <constraint>MUST NOT block on embedding generation - deferred to Story 2.4/3.2</constraint>
+    <constraint>Service files: apps/api/src/services/*.service.ts naming convention</constraint>
+    <constraint>Route files: apps/api/src/routes/{resource}/{operation}.route.ts pattern</constraint>
+    <constraint>Test files: apps/api/src/__tests__/{routes,integration}/*.test.ts pattern</constraint>
+    <constraint>Use pnpm for package management</constraint>
+    <constraint>ES modules (type: module) - use .js extensions in imports</constraint>
+    <constraint>TypeBox schemas for Fastify route validation (not Zod for routes)</constraint>
+    <constraint>Protected routes registered in app.ts protected context block</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>POST /api/v1/specs/openapi</name>
+      <kind>REST endpoint</kind>
+      <signature>
+Request:
+  Query: { version?: '3.0' | '3.1', environment?: string }
+  Headers: { Authorization: 'Bearer {api_key}' }
+  Body: OpenAPI spec JSON object
+
+Response 200 (sync processed):
+  { api_id, version_id, status: 'processed', endpoints_count, message }
+
+Response 202 (async queued):
+  { api_id, version_id, job_id, status: 'queued', message }
+
+Response 400 (validation error):
+  { error: { code: 'INVALID_SPEC', message, details: { errors } } }
+
+Response 401 (unauthorized):
+  { error: { code: 'UNAUTHORIZED', message } }
+
+Response 403 (forbidden):
+  { error: { code: 'FORBIDDEN', message } }
+      </signature>
+      <path>apps/api/src/routes/specs/openapi.route.ts (to be created)</path>
+    </interface>
+    <interface>
+      <name>SpecMetadataService</name>
+      <kind>Service class</kind>
+      <signature>
+interface SpecMetadata {
+  name: string
+  version: string
+  team?: string
+  owner?: string
+}
+
+class SpecMetadataService {
+  extractMetadata(spec: object): SpecMetadata
+  private sanitizeApiName(title: string): string
+}
+      </signature>
+      <path>apps/api/src/services/spec-metadata.service.ts (to be created)</path>
+    </interface>
+    <interface>
+      <name>SpecStorageService</name>
+      <kind>Service class</kind>
+      <signature>
+interface StorageResult {
+  apiId: string
+  versionId: string
+  endpointsCount: number
+  isNewApi: boolean
+}
+
+class SpecStorageService {
+  async store(spec: object, metadata: SpecMetadata, environment: string, uploadedBy: string): Promise&lt;StorageResult&gt;
+  countEndpoints(spec: object): number
+}
+      </signature>
+      <path>apps/api/src/services/spec-storage.service.ts (to be created)</path>
+    </interface>
+    <interface>
+      <name>AuthenticatedRequest</name>
+      <kind>TypeScript interface extension</kind>
+      <signature>
+declare module 'fastify' {
+  interface FastifyRequest {
+    apiKeyId: string | null  // Already defined in auth.ts
+  }
+}
+      </signature>
+      <path>apps/api/src/plugins/auth.ts (existing)</path>
+    </interface>
+    <interface>
+      <name>OpenAPIValidationService</name>
+      <kind>Fastify decorator</kind>
+      <signature>
+// From Story 2.2
+fastify.openAPIValidationService.validate(spec: unknown): Promise&lt;ValidationResult&gt;
+
+interface ValidationResult {
+  valid: boolean
+  errors?: ValidationError[]
+  dereferenced?: object  // Bundled spec ready for storage
+}
+      </signature>
+      <path>apps/api/src/services/openapi-validation.service.ts (from Story 2.2)</path>
+    </interface>
+    <interface>
+      <name>Prisma Api and ApiVersion Models</name>
+      <kind>Database models</kind>
+      <signature>
+// Create API record
+await db.api.create({
+  data: { name, team?, owner?, createdAt, updatedAt }
+})
+
+// Find existing API
+await db.api.findFirst({
+  where: { name: { equals: name, mode: 'insensitive' } }
+})
+
+// Create version record
+await db.apiVersion.create({
+  data: { apiId, version, environment, specJson, uploadedAt, uploadedBy? }
+})
+      </signature>
+      <path>apps/api/prisma/schema.prisma</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Vitest test runner with TypeScript support. Tests organized by describe blocks. Use beforeEach/afterEach for setup and teardown. Test files in apps/api/src/__tests__/. Integration tests use app.inject() for HTTP testing without starting server. Unit tests mock dependencies. Run with: pnpm --filter @perrache/api test. Use test fixtures from Story 2.2 in apps/api/src/__tests__/fixtures/openapi-specs/.
+    </standards>
+    <locations>
+      <location>apps/api/src/__tests__/routes/specs/openapi.route.test.ts (unit tests)</location>
+      <location>apps/api/src/__tests__/integration/specs-upload.test.ts (integration tests)</location>
+      <location>apps/api/src/__tests__/services/spec-metadata.service.test.ts (service tests)</location>
+      <location>apps/api/src/__tests__/services/spec-storage.service.test.ts (service tests)</location>
+      <location>apps/api/src/__tests__/fixtures/openapi-specs/ (test data from Story 2.2)</location>
+    </locations>
+    <ideas>
+      <idea acRef="AC1">Valid POST request with all parameters returns 200/202</idea>
+      <idea acRef="AC1">Request without body returns 400 validation error</idea>
+      <idea acRef="AC2">Missing Authorization header returns 401 UNAUTHORIZED</idea>
+      <idea acRef="AC2">Invalid API key returns 401 UNAUTHORIZED</idea>
+      <idea acRef="AC2">Revoked API key returns 401 (current impl treats as invalid)</idea>
+      <idea acRef="AC2">Valid API key passes through, request.apiKeyId set</idea>
+      <idea acRef="AC3">Valid spec passes validation, dereferenced returned</idea>
+      <idea acRef="AC4">Invalid spec returns 400 with INVALID_SPEC error code</idea>
+      <idea acRef="AC4">Validation errors include path and message for each issue</idea>
+      <idea acRef="AC5">Valid spec creates ApiVersion record in database</idea>
+      <idea acRef="AC5">uploadedBy field contains API key ID</idea>
+      <idea acRef="AC5">specJson contains full dereferenced spec</idea>
+      <idea acRef="AC6">API name extracted from info.title</idea>
+      <idea acRef="AC6">Team extracted from info['x-team'] when present</idea>
+      <idea acRef="AC6">Owner extracted from info['x-owner'] when present</idea>
+      <idea acRef="AC6">New API record created if name not found</idea>
+      <idea acRef="AC6">Existing API record found by case-insensitive name match</idea>
+      <idea acRef="AC7">Spec with 99 endpoints returns 200 with status: 'processed'</idea>
+      <idea acRef="AC7">Response includes correct endpoints_count</idea>
+      <idea acRef="AC8">Spec with 100 endpoints returns 202 with status: 'queued'</idea>
+      <idea acRef="AC8">Response includes job_id for async tracking</idea>
+      <idea acRef="AC9">Default version is 3.1 when not specified</idea>
+      <idea acRef="AC9">Default environment is 'dev' when not specified</idea>
+      <idea acRef="AC9">Custom environment (e.g., 'staging') stored as string</idea>
+      <idea acRef="AC10">Response includes X-Request-ID header</idea>
+      <idea acRef="AC10">Correlation ID matches request.id</idea>
+      <idea acRef="AC11">Rate limiting returns 429 when exceeded (covered by existing tests)</idea>
+      <idea acRef="AC12">Log entry includes apiName field</idea>
+      <idea acRef="AC12">Log entry includes environment field</idea>
+      <idea acRef="AC12">Log entry includes specSizeBytes field</idea>
+      <idea acRef="AC12">Log entry includes endpointsCount field</idea>
+      <idea acRef="AC12">Log entry includes apiKeyId (not full key)</idea>
+      <idea acRef="AC12">Log entry includes duration timing</idea>
+    </ideas>
+  </tests>
+</story-context>
