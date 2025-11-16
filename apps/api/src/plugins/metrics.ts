@@ -1,6 +1,7 @@
 import fp from 'fastify-plugin'
 import { FastifyInstance } from 'fastify'
 import client from 'prom-client'
+import { DatabaseService } from '../lib/db'
 
 // Create a custom registry to avoid polluting the global registry
 const register = new client.Registry()
@@ -61,7 +62,18 @@ async function metricsPlugin(fastify: FastifyInstance): Promise<void> {
   // Register /metrics endpoint
   fastify.get('/metrics', async (request, reply) => {
     reply.header('Content-Type', register.contentType)
-    return register.metrics()
+
+    // Get prom-client metrics
+    const promMetrics = await register.metrics()
+
+    // Get Prisma database metrics (if available)
+    const prismaMetrics = await DatabaseService.getMetrics()
+
+    // Combine both metrics outputs
+    // Prisma metrics are already in Prometheus format
+    const combinedMetrics = prismaMetrics ? `${promMetrics}\n${prismaMetrics}` : promMetrics
+
+    return combinedMetrics
   })
 }
 
