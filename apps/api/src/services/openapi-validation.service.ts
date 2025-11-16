@@ -35,15 +35,13 @@
 import SwaggerParser from '@apidevtools/swagger-parser'
 import type { OpenAPI } from 'openapi-types'
 import { ValidationErrorCode, ValidationErrorMessages } from '../types/validation-errors.js'
+import { countEndpoints, VALID_HTTP_METHODS } from '../utils/openapi-spec.utils.js'
 
 /** Default maximum spec size in bytes (10MB) */
 const DEFAULT_MAX_SPEC_SIZE_BYTES = 10 * 1024 * 1024
 
 /** Default maximum number of endpoints allowed per spec */
 const DEFAULT_MAX_ENDPOINTS = 1000
-
-/** Valid OpenAPI HTTP methods (lowercase) */
-const VALID_HTTP_METHODS = ['get', 'post', 'put', 'delete', 'patch', 'head', 'options'] as const
 
 /** Supported OpenAPI version prefixes */
 const SUPPORTED_VERSIONS = ['3.0', '3.1']
@@ -481,36 +479,10 @@ export class OpenAPIValidationService {
   }
 
   /**
-   * Count total endpoints (path + method combinations)
-   */
-  private countEndpoints(spec: Record<string, unknown>): number {
-    const paths = spec.paths as Record<string, unknown>
-    if (!paths || typeof paths !== 'object') return 0
-
-    let count = 0
-
-    for (const [pathKey, pathValue] of Object.entries(paths)) {
-      if (pathKey.startsWith('x-')) continue
-      if (!pathValue || typeof pathValue !== 'object') continue
-
-      const pathObj = pathValue as Record<string, unknown>
-
-      for (const methodKey of Object.keys(pathObj)) {
-        const lowerMethod = methodKey.toLowerCase()
-        if (VALID_HTTP_METHODS.includes(lowerMethod as (typeof VALID_HTTP_METHODS)[number])) {
-          count++
-        }
-      }
-    }
-
-    return count
-  }
-
-  /**
    * Check endpoint count does not exceed configured limit
    */
   private checkEndpointCount(spec: Record<string, unknown>): ValidationError[] {
-    const count = this.countEndpoints(spec)
+    const count = countEndpoints(spec)
 
     if (count > this.maxEndpoints) {
       return [
