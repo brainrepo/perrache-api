@@ -1,15 +1,12 @@
-import 'dotenv/config'
 import { createRequire } from 'module'
 import { buildApp } from './app.js'
 import { DatabaseService } from './lib/db.js'
-import { validateEnvironment } from './lib/env.js'
+// Import env types for TypeScript augmentation
+import './lib/env.js'
 
 // Load package.json for version info
 const require = createRequire(import.meta.url)
 const packageJson = require('../package.json')
-
-// Validate environment on startup
-const env = validateEnvironment()
 
 // Graceful shutdown handler
 const gracefulShutdown = async (signal: string) => {
@@ -37,12 +34,11 @@ let app: Awaited<ReturnType<typeof buildApp>> | null = null
 
 const start = async () => {
   try {
-    // Build Fastify app
+    // Build Fastify app (includes @fastify/env validation)
     app = await buildApp()
 
-    // Start listening
-    const port = parseInt(env.PORT || '3001', 10)
-    const host = env.HOST || '0.0.0.0'
+    // Access validated environment config from app.config
+    const { PORT: port, HOST: host, NODE_ENV: nodeEnv, LOG_LEVEL: logLevel } = app.config
 
     await app.listen({ port, host })
 
@@ -53,10 +49,10 @@ const start = async () => {
     app.log.info(
       {
         version: packageJson.version,
-        nodeEnv: env.NODE_ENV,
+        nodeEnv,
         port,
         host,
-        logLevel: env.LOG_LEVEL || 'info',
+        logLevel,
         database: dbHealthy ? 'connected' : 'disconnected'
       },
       'Application started'
