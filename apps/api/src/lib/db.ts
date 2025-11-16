@@ -1,8 +1,54 @@
 import { PrismaClient } from '@prisma/client'
 
+// Re-export Prisma types for API Catalog models
+export type { Api, ApiVersion, Endpoint, HttpMethod, ApiKey } from '@prisma/client'
+
 /**
  * Database connection instance with connection pooling
  * Singleton pattern to prevent multiple connections
+ *
+ * ## Entity Relationship Diagram (Text-based)
+ *
+ * ```
+ * Api (1) ──────< ApiVersion (*)
+ *   │                  │
+ *   │                  └──< Endpoint (*)
+ *   │
+ * Fields:
+ *   - id: String (CUID)
+ *   - name: String (indexed)
+ *   - team: String?
+ *   - owner: String?
+ *   - createdAt: DateTime
+ *   - updatedAt: DateTime
+ *
+ * ApiVersion:
+ *   - id: String (CUID)
+ *   - apiId: String (FK → Api)
+ *   - version: String
+ *   - environment: String (supports any environment name)
+ *   - specJson: Json (full OpenAPI spec)
+ *   - uploadedAt: DateTime (indexed)
+ *   - uploadedBy: String?
+ *   Index: (apiId, environment)
+ *
+ * Endpoint:
+ *   - id: String (CUID)
+ *   - apiVersionId: String (FK → ApiVersion)
+ *   - path: String
+ *   - method: HttpMethod enum
+ *   - domainObjectEmbedding: vector(1536)? (HNSW indexed)
+ *   - fullEndpointEmbedding: vector(1536)? (HNSW indexed)
+ *   - summary, description, operationId: String?
+ *   - tags: String[]
+ *   - requestSchema, responseSchema, parameters, headers: Json?
+ *   - deprecated: Boolean (default false)
+ *   - createdAt: DateTime
+ *   Unique: (apiVersionId, path, method)
+ *
+ * Cascade Behavior:
+ *   - Delete Api → cascades to ApiVersion → cascades to Endpoint
+ * ```
  */
 class DatabaseService {
   private static instance: PrismaClient | null = null

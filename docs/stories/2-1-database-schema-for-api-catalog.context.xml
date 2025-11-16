@@ -1,0 +1,193 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>1</storyId>
+    <title>Database Schema for API Catalog</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-16</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/2-1-database-schema-for-api-catalog.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>backend developer</asA>
+    <iWant>database tables designed to store APIs, specs, endpoints, and version history</iWant>
+    <soThat>we can persist and query the API catalog efficiently</soThat>
+    <tasks>
+      <task id="1" acs="1,2,3,4,6,7">Update Prisma Schema with API Catalog Models
+        <subtask>Define Api model with id, name, team, owner, timestamps, indexes</subtask>
+        <subtask>Define ApiVersion model with environment tracking, spec storage, cascade relations</subtask>
+        <subtask>Define Endpoint model with dual embeddings (vector(1536)), metadata fields, unique constraints</subtask>
+        <subtask>Define HttpMethod enum</subtask>
+      </task>
+      <task id="2" acs="5">Create Database Migration
+        <subtask>Run prisma migrate dev</subtask>
+        <subtask>Verify migration file in prisma/migrations/</subtask>
+        <subtask>Review generated SQL</subtask>
+      </task>
+      <task id="3" acs="3,8">Create HNSW Indexes for Vector Search
+        <subtask>Create manual SQL migration for pgvector HNSW indexes</subtask>
+        <subtask>Configure m=16, ef_construction=64 parameters</subtask>
+        <subtask>Index both domainObjectEmbedding and fullEndpointEmbedding</subtask>
+      </task>
+      <task id="4" acs="1-8">Validate Schema and Test Database Operations
+        <subtask>Generate Prisma client</subtask>
+        <subtask>Create integration tests for Api, ApiVersion, Endpoint CRUD</subtask>
+        <subtask>Test cascade deletes</subtask>
+        <subtask>Test unique constraints</subtask>
+        <subtask>Verify indexes with EXPLAIN ANALYZE</subtask>
+      </task>
+      <task id="5" acs="1-8">Update Database Service with Type Exports
+        <subtask>Export Prisma types for use in other services</subtask>
+        <subtask>Document schema and migration workflow</subtask>
+      </task>
+      <task id="6" acs="2">Environment Variable Documentation
+        <subtask>Document multi-environment support in .env.example</subtask>
+      </task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="1">Table apis exists with id (CUID), name (indexed), team, owner, timestamps</criterion>
+    <criterion id="2">Table api_versions exists with api_id FK, version, environment (string), spec_json (JSONB), uploaded_at, uploaded_by, indexes on (api_id, environment) and uploaded_at</criterion>
+    <criterion id="3">Table endpoints exists with api_version_id FK, path, method (enum), dual vector embeddings (1536 dims), metadata fields, unique constraint on (api_version_id, path, method), HNSW indexes on embeddings</criterion>
+    <criterion id="4">Foreign key constraints with CASCADE deletes: api_versions.api_id → apis.id, endpoints.api_version_id → api_versions.id</criterion>
+    <criterion id="5">Database migrations are versioned and reversible</criterion>
+    <criterion id="6">HttpMethod enum with GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS</criterion>
+    <criterion id="7">Unique constraint on endpoints (api_version_id, path, method)</criterion>
+    <criterion id="8">HNSW indexes with m=16, ef_construction=64 for sub-second search performance</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Decision Records</title>
+        <section>Dual-Embedding Semantic Discovery and Data Architecture</section>
+        <snippet>Defines Prisma schema patterns, 1536-dimension embeddings for OpenAI, HNSW index configuration (m=16, ef_construction=64), and ADR-009 mandating environment as string not enum for enterprise flexibility.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic 2 Story 2.1</title>
+        <section>Story 2.1: Database Schema for API Catalog</section>
+        <snippet>Specifies apis, api_versions, and endpoints tables with exact field requirements, indexes, foreign key constraints, and pgvector vector(768) dimensions (note: architecture.md specifies 1536 for OpenAI).</snippet>
+      </doc>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>Data Model Requirements</section>
+        <snippet>Business requirements for API cataloging: multi-environment support (dev/staging/prod), version history tracking, semantic search capabilities.</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/1-2-postgresql-database-with-pgvector-extension.md</path>
+        <title>Story 1.2 PostgreSQL Setup</title>
+        <section>Database Foundation</section>
+        <snippet>Established PostgreSQL with pgvector extension, Prisma ORM with previewFeatures, DatabaseService singleton pattern, health check endpoint.</snippet>
+      </doc>
+    </docs>
+
+    <code>
+      <file>
+        <path>apps/api/prisma/schema.prisma</path>
+        <kind>schema</kind>
+        <symbol>Prisma schema definition</symbol>
+        <lines>1-29</lines>
+        <reason>Current schema has ApiKey model, pgvector extension enabled, previewFeatures=["postgresqlExtensions","metrics"]. New Api, ApiVersion, Endpoint models will be added here.</reason>
+      </file>
+      <file>
+        <path>apps/api/src/lib/db.ts</path>
+        <kind>service</kind>
+        <symbol>DatabaseService</symbol>
+        <lines>1-86</lines>
+        <reason>Singleton Prisma client with connection pooling, health check, metrics. Pattern to follow for exporting new model types.</reason>
+      </file>
+      <file>
+        <path>apps/api/src/__tests__/database.test.ts</path>
+        <kind>test</kind>
+        <symbol>Database Connection Tests</symbol>
+        <lines>1-45</lines>
+        <reason>Existing test patterns for database operations, pgvector operators (cosine similarity with &lt;=&gt;), health checks. Follow this pattern for new schema tests.</reason>
+      </file>
+      <file>
+        <path>apps/api/prisma/migrations/20251110161333_init_pgvector/migration.sql</path>
+        <kind>migration</kind>
+        <symbol>Initial pgvector setup</symbol>
+        <lines>all</lines>
+        <reason>Shows migration pattern. New migrations should follow same versioned structure.</reason>
+      </file>
+      <file>
+        <path>apps/api/prisma/migrations/20251115215453_add_api_key_model/migration.sql</path>
+        <kind>migration</kind>
+        <symbol>ApiKey table migration</symbol>
+        <lines>all</lines>
+        <reason>Recent migration example showing table creation with indexes, CUID ids, timestamps.</reason>
+      </file>
+    </code>
+
+    <dependencies>
+      <node>
+        <package name="@prisma/client" version="^6.19.0" />
+        <package name="prisma" version="^6.19.0" />
+        <package name="@sinclair/typebox" version="^0.34.41" />
+        <package name="vitest" version="^4.0.8" />
+        <package name="tsx" version="^4.7.0" />
+        <package name="typescript" version="^5.3.3" />
+      </node>
+      <database>
+        <postgresql version="15+" />
+        <pgvector enabled="true" />
+      </database>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Use Prisma for schema definition and migrations - no raw SQL for model creation</constraint>
+    <constraint>Environment field MUST be string type (not enum) per ADR-009 for enterprise flexibility</constraint>
+    <constraint>Vector embeddings are 1536 dimensions for OpenAI text-embedding-3-small compatibility</constraint>
+    <constraint>Use Unsupported("vector(1536)") for pgvector columns since Prisma lacks native support</constraint>
+    <constraint>HNSW indexes require manual SQL migration (Prisma doesn't support HNSW index syntax)</constraint>
+    <constraint>Foreign keys must cascade on delete to maintain referential integrity</constraint>
+    <constraint>CUIDs for primary keys (consistent with existing ApiKey model)</constraint>
+    <constraint>All tests use Vitest framework with describe/it pattern</constraint>
+    <constraint>Database operations must use DatabaseService.getInstance() pattern</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>DatabaseService</name>
+      <kind>class singleton</kind>
+      <signature>static getInstance(): PrismaClient; static healthCheck(): Promise&lt;boolean&gt;; static getMetrics(): Promise&lt;string&gt;</signature>
+      <path>apps/api/src/lib/db.ts</path>
+    </interface>
+    <interface>
+      <name>Prisma Schema Extensions</name>
+      <kind>schema configuration</kind>
+      <signature>extensions = [vector] in datasource db block</signature>
+      <path>apps/api/prisma/schema.prisma:12</path>
+    </interface>
+    <interface>
+      <name>pgvector cosine similarity</name>
+      <kind>SQL operator</kind>
+      <signature>&lt;=&gt; operator for cosine distance (1 - similarity)</signature>
+      <path>apps/api/src/__tests__/database.test.ts:33-43</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>Vitest test framework with describe/it blocks. Integration tests for database operations use DatabaseService.getInstance() and direct Prisma queries. Test pgvector operators with $queryRaw. Located in apps/api/src/__tests__/ directory. Run with 'pnpm --filter @perrache/api test'.</standards>
+    <locations>
+      <location>apps/api/src/__tests__/*.test.ts</location>
+      <location>apps/api/src/__tests__/database-schema.test.ts (to be created)</location>
+    </locations>
+    <ideas>
+      <idea ac="1">Test Api CRUD operations: create with all fields, read by id, update name, delete cascades</idea>
+      <idea ac="2">Test ApiVersion creation linked to Api, query by (api_id, environment), version history sorted by uploadedAt desc</idea>
+      <idea ac="3">Test Endpoint creation with metadata fields, verify unique constraint enforced, test HttpMethod enum values</idea>
+      <idea ac="4">Test cascade deletes: delete Api removes all ApiVersions and Endpoints automatically</idea>
+      <idea ac="5">Verify migration files created and reversible (up/down migrations)</idea>
+      <idea ac="6">Test all HttpMethod enum values: GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS</idea>
+      <idea ac="7">Test that inserting duplicate (apiVersionId, path, method) throws constraint error</idea>
+      <idea ac="8">Use EXPLAIN ANALYZE to verify HNSW indexes are created and used for vector queries</idea>
+    </ideas>
+  </tests>
+</story-context>
