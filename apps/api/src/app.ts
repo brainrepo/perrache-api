@@ -85,7 +85,7 @@ export async function buildApp(): Promise<FastifyInstance> {
       info: {
         title: 'Perrache API',
         description: 'Automated API catalog with semantic search',
-        version: '0.1.0'
+        version: packageJson.version
       },
       servers: [
         {
