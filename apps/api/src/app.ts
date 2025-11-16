@@ -1,11 +1,12 @@
 import Fastify, { FastifyInstance } from 'fastify'
+import fastifyEnv from '@fastify/env'
 import cors from '@fastify/cors'
 import helmet from '@fastify/helmet'
 import swagger from '@fastify/swagger'
 import swaggerUi from '@fastify/swagger-ui'
 import { createRequire } from 'module'
 import { DatabaseService } from './lib/db.js'
-import { validateEnvironment } from './lib/env.js'
+import { envOptions } from './lib/env.js'
 import { adminKeysRoutes } from './routes/admin/keys.js'
 import rateLimitPlugin from './plugins/rate-limit.js'
 import authPlugin from './plugins/auth.js'
@@ -23,13 +24,10 @@ const appStartTime = Date.now()
  * Separated from server.ts to enable testing without starting the server
  */
 export async function buildApp(): Promise<FastifyInstance> {
-  // Validate environment variables on startup
-  const env = validateEnvironment()
-
-  // Initialize Fastify with pino logger
+  // Initialize Fastify with basic logger (will be configured after env validation)
   const app = Fastify({
     logger: {
-      level: env.LOG_LEVEL || 'info',
+      level: process.env.LOG_LEVEL || 'info',
       // Redact sensitive information from logs
       redact: {
         paths: [
@@ -44,7 +42,7 @@ export async function buildApp(): Promise<FastifyInstance> {
         censor: '[REDACTED]'
       },
       transport:
-        env.NODE_ENV === 'development'
+        process.env.NODE_ENV === 'development'
           ? {
               target: 'pino-pretty',
               options: {
@@ -62,9 +60,13 @@ export async function buildApp(): Promise<FastifyInstance> {
     requestIdLogLabel: 'reqId'
   })
 
+  // Register @fastify/env FIRST for environment variable validation
+  // This validates and loads env vars with JSON Schema validation
+  await app.register(fastifyEnv, envOptions)
+
   // Register CORS middleware BEFORE routes
   await app.register(cors, {
-    origin: env.CORS_ORIGIN || 'http://localhost:3001',
+    origin: app.config.CORS_ORIGIN,
     credentials: true
   })
 
@@ -83,7 +85,7 @@ export async function buildApp(): Promise<FastifyInstance> {
       },
       servers: [
         {
-          url: `http://localhost:${env.PORT || 3001}`,
+          url: `http://localhost:${app.config.PORT}`,
           description: 'Development server'
         }
       ]

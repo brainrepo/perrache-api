@@ -1,42 +1,78 @@
 /**
- * Environment variable validation
- * Ensures required environment variables are set before the application starts
+ * Environment variable validation using @fastify/env
+ * JSON Schema-based validation with automatic type coercion
  */
 
 export interface EnvironmentConfig {
   DATABASE_URL: string
-  DB_POOL_SIZE?: string
+  DB_POOL_SIZE: number
   NODE_ENV: string
-  PORT?: string
-  HOST?: string
-  CORS_ORIGIN?: string
-  LOG_LEVEL?: string
+  PORT: number
+  HOST: string
+  CORS_ORIGIN: string
+  LOG_LEVEL: string
 }
 
-const requiredEnvVars = ['DATABASE_URL'] as const
-
-export function validateEnvironment(): EnvironmentConfig {
-  const missing: string[] = []
-
-  for (const envVar of requiredEnvVars) {
-    if (!process.env[envVar]) {
-      missing.push(envVar)
+/**
+ * JSON Schema for environment variables
+ * Used by @fastify/env for validation and type coercion
+ */
+export const envSchema = {
+  type: 'object',
+  required: ['DATABASE_URL'],
+  properties: {
+    DATABASE_URL: {
+      type: 'string',
+      description: 'Database connection URL'
+    },
+    DB_POOL_SIZE: {
+      type: 'number',
+      default: 10,
+      description: 'Database connection pool size'
+    },
+    NODE_ENV: {
+      type: 'string',
+      default: 'development',
+      enum: ['development', 'production', 'test'],
+      description: 'Node environment'
+    },
+    PORT: {
+      type: 'number',
+      default: 3001,
+      description: 'Server port'
+    },
+    HOST: {
+      type: 'string',
+      default: '0.0.0.0',
+      description: 'Server host'
+    },
+    CORS_ORIGIN: {
+      type: 'string',
+      default: 'http://localhost:3001',
+      description: 'CORS allowed origin'
+    },
+    LOG_LEVEL: {
+      type: 'string',
+      default: 'info',
+      enum: ['trace', 'debug', 'info', 'warn', 'error', 'fatal'],
+      description: 'Pino log level'
     }
   }
+} as const
 
-  if (missing.length > 0) {
-    throw new Error(
-      `❌ Missing required environment variables:\n  ${missing.join('\n  ')}\n\nPlease check your .env file.`
-    )
-  }
+/**
+ * @fastify/env plugin options
+ */
+export const envOptions = {
+  confKey: 'config',
+  schema: envSchema,
+  dotenv: true,
+  data: process.env
+}
 
-  return {
-    DATABASE_URL: process.env.DATABASE_URL!,
-    DB_POOL_SIZE: process.env.DB_POOL_SIZE,
-    NODE_ENV: process.env.NODE_ENV || 'development',
-    PORT: process.env.PORT,
-    HOST: process.env.HOST,
-    CORS_ORIGIN: process.env.CORS_ORIGIN,
-    LOG_LEVEL: process.env.LOG_LEVEL
+// Augment FastifyInstance to include config property
+declare module 'fastify' {
+  interface FastifyInstance {
+    config: EnvironmentConfig
   }
 }
