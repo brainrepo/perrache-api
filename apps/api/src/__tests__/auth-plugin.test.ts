@@ -2,16 +2,22 @@ import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest'
 import { FastifyInstance } from 'fastify'
 import Fastify from 'fastify'
 import authPlugin from '../plugins/auth'
-import { apiKeyService } from '../services/api-key.service'
+import { ApiKeyService } from '../services/api-key.service'
 import { db } from '../lib/db'
 
 describe('Auth Plugin', () => {
   let app: FastifyInstance
   const createdKeyIds: string[] = []
+  const testSecret =
+    process.env.API_KEY_SECRET || 'test-secret-key-for-hmac-sha256-hashing-minimum-32-chars'
+  const apiKeyService = new ApiKeyService(testSecret)
 
   beforeAll(async () => {
     // Create a test app with auth plugin
     app = Fastify({ logger: false })
+
+    // Decorate Fastify instance with apiKeyService (normally done by api-key plugin)
+    app.decorate('apiKeyService', apiKeyService)
 
     // Register auth plugin on a protected route context
     await app.register(async (instance) => {

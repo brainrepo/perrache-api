@@ -5,7 +5,8 @@ import { db } from '../lib/db'
 describe('ApiKeyService', () => {
   let service: ApiKeyService
   const createdKeyIds: string[] = []
-  const testSecret = process.env.API_KEY_SECRET || 'test-secret-key-for-hmac-sha256-hashing-minimum-32-chars'
+  const testSecret =
+    process.env.API_KEY_SECRET || 'test-secret-key-for-hmac-sha256-hashing-minimum-32-chars'
 
   beforeEach(() => {
     service = new ApiKeyService(testSecret)
@@ -27,11 +28,13 @@ describe('ApiKeyService', () => {
     })
 
     it('should throw error when secret is too short', () => {
-      expect(() => new ApiKeyService('short-secret')).toThrow('API_KEY_SECRET must be at least 32 characters')
+      expect(() => new ApiKeyService('short-secret')).toThrow(
+        'API_KEY_SECRET must be at least 32 characters'
+      )
     })
 
     it('should create instance with valid secret', () => {
-      const validSecret = 'this-is-a-valid-secret-key-32ch'
+      const validSecret = 'this-is-a-valid-secret-key-32chs'
       const instance = new ApiKeyService(validSecret)
       expect(instance).toBeInstanceOf(ApiKeyService)
     })
