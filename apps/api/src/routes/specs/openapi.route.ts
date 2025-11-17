@@ -152,16 +152,22 @@ export async function openapiRoute(fastify: FastifyInstance): Promise<void> {
         request.apiKeyId!
       )
 
+      // Step 4: Extract and store individual endpoints
+      const extractionResult = await fastify.endpointExtractionService.extractAndStore(
+        storageResult.versionId,
+        dereferencedSpec
+      )
+
       const duration = Date.now() - start
       const specSizeBytes = JSON.stringify(request.body).length
 
-      // Step 4: Log request details (AC12)
+      // Step 5: Log request details (AC12)
       request.log.info(
         {
           apiName: metadata.name,
           environment,
           specSizeBytes,
-          endpointsCount: storageResult.endpointsCount,
+          endpointsCount: extractionResult.endpointsExtracted,
           apiKeyId: request.apiKeyId,
           correlationId: request.id,
           duration,
@@ -172,14 +178,14 @@ export async function openapiRoute(fastify: FastifyInstance): Promise<void> {
         'Spec upload completed'
       )
 
-      // Step 5: Return appropriate response based on spec size
-      if (storageResult.endpointsCount < SYNC_PROCESSING_THRESHOLD) {
+      // Step 6: Return appropriate response based on endpoint count
+      if (extractionResult.endpointsExtracted < SYNC_PROCESSING_THRESHOLD) {
         // Sync processing - return 200
         return reply.status(200).send({
           api_id: storageResult.apiId,
           version_id: storageResult.versionId,
           status: 'processed' as const,
-          endpoints_count: storageResult.endpointsCount,
+          endpoints_count: extractionResult.endpointsExtracted,
           message: 'Spec processed successfully'
         })
       } else {
@@ -193,7 +199,7 @@ export async function openapiRoute(fastify: FastifyInstance): Promise<void> {
             jobId,
             apiId: storageResult.apiId,
             versionId: storageResult.versionId,
-            endpointsCount: storageResult.endpointsCount
+            endpointsCount: extractionResult.endpointsExtracted
           },
           'Spec queued for background processing'
         )

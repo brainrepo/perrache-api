@@ -1,0 +1,216 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>5</storyId>
+    <title>Multi-Environment &amp; Version History Support</title>
+    <status>ready-for-dev</status>
+    <generatedAt>2025-11-17</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/2-5-multi-environment-version-history-support.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>API owner</asA>
+    <iWant>track which spec version is deployed in each environment (dev/staging/prod)</iWant>
+    <soThat>consumers know which version to test against</soThat>
+    <tasks>
+      <task id="1">Verify Environment Support in Webhook Endpoint</task>
+      <task id="2">Create Version History Service</task>
+      <task id="3">Create Fastify Plugin for Version History Service</task>
+      <task id="4">Create Version History API Route</task>
+      <task id="5">Add Error Handling for Version History</task>
+      <task id="6">Write Unit Tests for Version History Service</task>
+      <task id="7">Write Integration Tests for Version History API</task>
+      <task id="8">Update API Documentation</task>
+      <task id="9">Add Structured Logging</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="1">Each environment maintains its own current version when specs uploaded with different environment parameters</criterion>
+    <criterion id="2">GET /api/v1/apis/{id}/versions returns all versions sorted by uploaded_at descending</criterion>
+    <criterion id="3">GET /api/v1/apis/{id}/versions?environment=prod returns only versions for that environment</criterion>
+    <criterion id="4">Version entry includes: id, version, environment, uploaded_at, endpoints_count</criterion>
+    <criterion id="5">New versions stored separately while preserving previous versions (never delete)</criterion>
+    <criterion id="6">Pagination support: page/limit with default 20, max 100</criterion>
+    <criterion id="7">404 Not Found for non-existent API ID</criterion>
+    <criterion id="8">400 Bad Request for invalid environment parameter</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <entry>
+        <path>docs/architecture.md</path>
+        <title>Architecture</title>
+        <section>API Contracts and Implementation Patterns</section>
+        <snippet>Defines REST API patterns, error response format, pagination structure, Fastify service injection via decorators, and TypeBox schemas for validation.</snippet>
+      </entry>
+      <entry>
+        <path>docs/architecture.md</path>
+        <title>Architecture</title>
+        <section>ADR-009: Environment as String, Not Enum</section>
+        <snippet>Environment stored as configurable string instead of enum to support varied environment names (dev, staging, prod, qa, canary, preview, etc.).</snippet>
+      </entry>
+      <entry>
+        <path>docs/epics.md</path>
+        <title>Epic Definitions</title>
+        <section>Story 2.5: Multi-Environment &amp; Version History Support</section>
+        <snippet>API owner needs to track spec versions per environment so consumers know which version to test against. Each environment maintains own current version with queryable version history.</snippet>
+      </entry>
+      <entry>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>FR-1.3 Version History</section>
+        <snippet>Version history must be queryable via API with filtering by environment and pagination support. Show version progression across environments.</snippet>
+      </entry>
+    </docs>
+
+    <code>
+      <entry>
+        <path>apps/api/prisma/schema.prisma</path>
+        <kind>database-schema</kind>
+        <symbol>ApiVersion model</symbol>
+        <lines>57-72</lines>
+        <reason>CRITICAL: ApiVersion already has environment field (String) and endpoints relation. NO MIGRATION NEEDED.</reason>
+      </entry>
+      <entry>
+        <path>apps/api/prisma/schema.prisma</path>
+        <kind>database-schema</kind>
+        <symbol>Endpoint model</symbol>
+        <lines>74-103</lines>
+        <reason>Endpoint model has apiVersionId foreign key - enables _count.endpoints in Prisma queries for endpoints_count.</reason>
+      </entry>
+      <entry>
+        <path>apps/api/src/lib/db.ts</path>
+        <kind>database-client</kind>
+        <symbol>DatabaseService</symbol>
+        <lines>all</lines>
+        <reason>Singleton Prisma client instance. Import as: import { db } from '../lib/db.js'</reason>
+      </entry>
+      <entry>
+        <path>apps/api/src/services/spec-storage.service.ts</path>
+        <kind>service</kind>
+        <symbol>SpecStorageService</symbol>
+        <lines>all</lines>
+        <reason>Reference service pattern: constructor takes PrismaClient, methods return typed interfaces, direct Prisma queries.</reason>
+      </entry>
+      <entry>
+        <path>apps/api/src/plugins/spec-storage.ts</path>
+        <kind>plugin</kind>
+        <symbol>specStorageServicePlugin</symbol>
+        <lines>all</lines>
+        <reason>Reference plugin pattern: fp wrapper, declare module 'fastify', fastify.decorate(), dependencies array.</reason>
+      </entry>
+      <entry>
+        <path>apps/api/src/routes/specs/openapi.route.ts</path>
+        <kind>route</kind>
+        <symbol>openapiRoute</symbol>
+        <lines>all</lines>
+        <reason>Reference route pattern: TypeBox schemas, typed request generics, schema object with tags/querystring/response, fastify.service access.</reason>
+      </entry>
+      <entry>
+        <path>apps/api/src/routes/specs/index.ts</path>
+        <kind>route-index</kind>
+        <symbol>specsRoutes</symbol>
+        <lines>all</lines>
+        <reason>Route registration pattern: fastify.register(routeModule, { prefix: '/path' })</reason>
+      </entry>
+      <entry>
+        <path>apps/api/src/app.ts</path>
+        <kind>application</kind>
+        <symbol>buildApp</symbol>
+        <lines>147-183, 256-263</lines>
+        <reason>Global error handler (147-183): handles 404/401/429/500 with structured error format. Route registration (256-263): protected routes under /api/v1 prefix.</reason>
+      </entry>
+      <entry>
+        <path>apps/api/src/__tests__/services/spec-storage.service.test.ts</path>
+        <kind>test</kind>
+        <symbol>SpecStorageService tests</symbol>
+        <lines>all</lines>
+        <reason>Service test pattern: sequential tests, cleanup functions, try/finally blocks, direct DB assertions.</reason>
+      </entry>
+      <entry>
+        <path>apps/api/src/__tests__/routes/specs/openapi.route.test.ts</path>
+        <kind>test</kind>
+        <symbol>OpenAPI route tests</symbol>
+        <lines>all</lines>
+        <reason>Integration test pattern: buildApp(), app.inject(), response.json(), cleanup in afterAll/afterEach.</reason>
+      </entry>
+    </code>
+
+    <dependencies>
+      <node>
+        <package>fastify</package>
+        <version>^5.0.0</version>
+      </node>
+      <node>
+        <package>fastify-plugin</package>
+        <version>^5.1.0</version>
+      </node>
+      <node>
+        <package>@sinclair/typebox</package>
+        <version>^0.34.41</version>
+      </node>
+      <node>
+        <package>@prisma/client</package>
+        <version>^6.19.0</version>
+      </node>
+      <node>
+        <package>vitest</package>
+        <version>^4.0.8</version>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>MUST preserve all historical versions - never delete old versions</constraint>
+    <constraint>MUST use Prisma ORM conventions for database queries</constraint>
+    <constraint>MUST follow Fastify plugin pattern for service injection</constraint>
+    <constraint>MUST return standard error format: { error: { code, message, details? } }</constraint>
+    <constraint>MUST use TypeBox schemas for request/response validation</constraint>
+    <constraint>MUST enforce pagination limits (max 100 per request)</constraint>
+    <constraint>MUST sort versions by uploadedAt descending</constraint>
+    <constraint>MUST include endpoints_count via Prisma _count relation</constraint>
+    <constraint>Environment is string field (not enum) per ADR-009</constraint>
+    <constraint>NO DATABASE MIGRATION REQUIRED - schema already supports all fields</constraint>
+  </constraints>
+
+  <interfaces>
+    <api>
+      <name>GET /api/v1/apis/{id}/versions</name>
+      <kind>REST endpoint</kind>
+      <signature>GET /api/v1/apis/:id/versions?environment={string}&amp;page={int}&amp;limit={int}</signature>
+      <path>apps/api/src/routes/apis/versions.route.ts (TO BE CREATED)</path>
+    </api>
+    <api>
+      <name>VersionHistoryService.getVersionHistory</name>
+      <kind>service method</kind>
+      <signature>getVersionHistory(apiId: string, options?: { environment?: string, page?: number, limit?: number }): Promise&lt;PaginatedVersionHistory&gt;</signature>
+      <path>apps/api/src/services/version-history.service.ts (TO BE CREATED)</path>
+    </api>
+    <existing>
+      <name>ApiVersion Prisma Model</name>
+      <kind>database model</kind>
+      <signature>prisma.apiVersion.findMany({ where: { apiId, environment? }, orderBy: { uploadedAt: 'desc' }, skip, take, include: { _count: { select: { endpoints: true } } } })</signature>
+      <path>apps/api/prisma/schema.prisma:57-72</path>
+    </existing>
+  </interfaces>
+
+  <tests>
+    <standards>Vitest test framework with sequential test execution. Service tests use direct Prisma queries for setup/assertions with cleanup in try/finally blocks. Integration tests use Fastify app.inject() for HTTP request simulation. Tests require cleanup functions to remove test data. Test files located in src/__tests__/ with pattern: services/*.service.test.ts and routes/**/*.route.test.ts. Use describe() with { sequential: true } for database tests.</standards>
+    <locations>
+      <location>apps/api/src/__tests__/services/</location>
+      <location>apps/api/src/__tests__/routes/</location>
+      <location>apps/api/src/__tests__/integration/</location>
+    </locations>
+    <ideas>
+      <idea acId="2">Test getVersionHistory returns all versions sorted by uploadedAt desc</idea>
+      <idea acId="3">Test environment filtering returns only matching environment versions</idea>
+      <idea acId="4">Test response includes id, version, environment, uploaded_at, endpoints_count fields</idea>
+      <idea acId="5">Test uploading new version preserves previous versions (count increases)</idea>
+      <idea acId="6">Test pagination: default page=1, limit=20, max limit enforced at 100, hasMore flag correct</idea>
+      <idea acId="7">Test 404 response for non-existent API ID with structured error format</idea>
+      <idea acId="8">Test 400 response for invalid pagination params (page=0, limit&gt;100)</idea>
+    </ideas>
+  </tests>
+</story-context>
