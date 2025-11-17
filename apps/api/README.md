@@ -39,7 +39,7 @@ Built with:
 - `GET /metrics` - Prometheus metrics endpoint
 - `GET /docs` - OpenAPI/Swagger documentation
 - `POST /api/v1/admin/keys` - Create API key (admin)
-- `GET /api/v1/protected` - Protected route example
+- `POST /api/v1/specs` - Ingest OpenAPI specifications (authenticated)
 
 ## Observability
 

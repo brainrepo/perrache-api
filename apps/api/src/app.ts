@@ -254,13 +254,6 @@ export async function buildApp(): Promise<FastifyInstance> {
       await protectedContext.register(authPlugin)
       // Register specs routes (webhook ingestion)
       await protectedContext.register(specsRoutes, { prefix: '/specs' })
-      // Future protected routes will be registered here
-      protectedContext.get('/protected', async (request) => {
-        return {
-          message: 'Access granted',
-          apiKeyId: request.apiKeyId
-        }
-      })
     },
     { prefix: '/api/v1' }
   )
