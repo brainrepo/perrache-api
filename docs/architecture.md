@@ -29,27 +29,56 @@ This establishes the base monorepo structure with TypeScript, ESLint, Prettier, 
 
 ## Decision Summary
 
-| Category | Decision | Version | Affects Epics | Rationale |
-| -------- | -------- | ------- | ------------- | --------- |
-| **Monorepo Tool** | Turborepo | Latest | All | Build orchestration, type sharing, parallel task execution |
-| **Package Manager** | pnpm | Latest | All | Fast, efficient, Turborepo default |
-| **Backend Framework** | Fastify | Latest | API Ingestion, Search, Breaking Changes | Fast, TypeScript-first, low overhead, plugin ecosystem |
-| **Frontend Framework** | Next.js 15 | 15.x (App Router) | Catalog UI, Search Interface | Modern React, SSR, App Router, TypeScript support |
-| **Language** | TypeScript | Latest (5.x) | All | Type safety across entire stack, shared types via Turborepo |
-| **Frontend-Backend Communication** | REST API + Shared Types | N/A | All | RESTful for public webhooks, type safety via `@perrache/types` package |
-| **Styling** | Tailwind CSS | Latest (4.x) | Frontend | Utility-first, developer-friendly, dark mode support |
-| **API Documentation** | @fastify/swagger | Latest | API | Auto-generated OpenAPI spec, Perrache catalogs itself |
-| **Linting** | ESLint | Latest | All | Code quality (shared config in `@perrache/config`) |
-| **Formatting** | Prettier | Latest | All | Code consistency (shared config in `@perrache/config`) |
-| **Database** | PostgreSQL + pgvector | 15+ | API Backend | Vector similarity search for semantic discovery |
-| **Database (Dev)** | Docker Compose PostgreSQL | Latest | Local Development | Consistent local dev environment |
-| **Database (Prod)** | AWS RDS PostgreSQL | 15+ | Production | Managed scaling, backups, enterprise-grade reliability |
-| **ORM** | Prisma | Latest | API Backend | TypeScript-first, migrations, pgvector extension support |
-| **Embedding Provider** | OpenAI text-embedding-3-small | API | Semantic Search | Best quality/cost ratio, 1536 dimensions, provider-agnostic interface |
-| **Embedding Abstraction** | @perrache/embedding package | N/A | API Backend | Unified interface across OpenAI/Cohere/Ollama providers |
-| **Breaking Change Detection** | @pb33f/openapi-changes | Latest | Change Detection | Adapter pattern for future library swaps, async queue execution |
-| **Queue System** | pg-boss | Latest | Async Processing | PostgreSQL-based job queue, no extra infrastructure, decoupled actions |
-| **Email Provider** | Resend | Latest | Notifications | Modern API, great DX, breaking change alerts to service owners |
+| Category                           | Decision                      | Version           | Affects Epics                           | Rationale                                                              |
+| ---------------------------------- | ----------------------------- | ----------------- | --------------------------------------- | ---------------------------------------------------------------------- |
+| **Monorepo Tool**                  | Turborepo                     | Latest            | All                                     | Build orchestration, type sharing, parallel task execution             |
+| **Package Manager**                | pnpm                          | Latest            | All                                     | Fast, efficient, Turborepo default                                     |
+| **Backend Framework**              | Fastify                       | Latest            | API Ingestion, Search, Breaking Changes | Fast, TypeScript-first, low overhead, plugin ecosystem                 |
+| **Frontend Framework**             | Next.js 15                    | 15.x (App Router) | Catalog UI, Search Interface            | Modern React, SSR, App Router, TypeScript support                      |
+| **Language**                       | TypeScript                    | Latest (5.x)      | All                                     | Type safety across entire stack, shared types via Turborepo            |
+| **Frontend-Backend Communication** | REST API + Shared Types       | N/A               | All                                     | RESTful for public webhooks, type safety via `@perrache/types` package |
+| **Styling**                        | Tailwind CSS                  | Latest (4.x)      | Frontend                                | Utility-first, developer-friendly, dark mode support                   |
+| **API Documentation**              | @fastify/swagger              | Latest            | API                                     | Auto-generated OpenAPI spec, Perrache catalogs itself                  |
+| **Linting**                        | ESLint                        | Latest            | All                                     | Code quality (shared config in `@perrache/config`)                     |
+| **Formatting**                     | Prettier                      | Latest            | All                                     | Code consistency (shared config in `@perrache/config`)                 |
+| **Database**                       | PostgreSQL + pgvector         | 15+               | API Backend                             | Vector similarity search for semantic discovery                        |
+| **Database (Dev)**                 | Docker Compose PostgreSQL     | Latest            | Local Development                       | Consistent local dev environment                                       |
+| **Database (Prod)**                | AWS RDS PostgreSQL            | 15+               | Production                              | Managed scaling, backups, enterprise-grade reliability                 |
+| **ORM**                            | Prisma                        | Latest            | API Backend                             | TypeScript-first, migrations, pgvector extension support               |
+| **Embedding Provider**             | OpenAI text-embedding-3-small | API               | Semantic Search                         | Best quality/cost ratio, 1536 dimensions, provider-agnostic interface  |
+| **Embedding Abstraction**          | @perrache/embedding package   | N/A               | API Backend                             | Unified interface across OpenAI/Cohere/Ollama providers                |
+| **Breaking Change Detection**      | @pb33f/openapi-changes        | Latest            | Change Detection                        | Adapter pattern for future library swaps, async queue execution        |
+| **Queue System**                   | pg-boss                       | Latest            | Async Processing                        | PostgreSQL-based job queue, no extra infrastructure, decoupled actions |
+| **Email Provider**                 | Resend                        | Latest            | Notifications                           | Modern API, great DX, breaking change alerts to service owners         |
+
+## Deployment Strategy
+
+### Incremental Frontend Delivery
+
+The frontend application (`apps/web`) can be deployed incrementally as backend APIs become available:
+
+**Minimum Deployment Requirements:**
+
+- **After Epic 1-3 completion:** Full search and discovery UI can be deployed
+  - Required APIs: `/api/v1/search`, `/api/v1/apis`, `/api/v1/endpoints/{id}`, `/api/v1/endpoints/{id}/related`
+  - Frontend features available: Homepage search, results page, endpoint details, catalog browsing, related endpoints
+  - Missing features: Consumer visibility (requires Epic 4), breaking change history (requires Epic 5)
+
+**Progressive Enhancement:**
+
+- **After Epic 4:** Consumer lists appear in endpoint detail pages
+- **After Epic 5:** Breaking change indicators and history appear throughout UI
+- **After Epic 7:** Governance dashboards become available
+
+**Implementation Notes:**
+
+- Frontend gracefully handles missing data (empty states for consumers, breaking changes)
+- API client returns empty arrays for missing Epic 4/5 data
+- No conditional rendering logic needed - UI components handle nullable/empty data
+- Deployment can proceed as soon as Epic 3 backend APIs are stable
+
+**Why This Works:**
+The REST API design with shared TypeScript types (`@perrache/types`) ensures frontend can safely consume backend APIs as they become available. The monorepo structure allows independent deployment of `apps/api` and `apps/web` with separate release cycles.
 
 ## Project Structure
 
@@ -176,6 +205,7 @@ perrache/
 **Purpose:** Enable both domain-object similarity (find APIs with similar data) and API-signature similarity (find APIs with similar contracts) to prevent duplicate builds and improve discovery accuracy.
 
 **Key Innovation:** Generate two embeddings per endpoint to support different discovery use cases:
+
 - **Domain Object Embedding:** Finds functionally similar APIs (same data models, regardless of path naming)
 - **Full Endpoint Embedding:** Finds similar API contracts (including descriptions, naming, complete signature)
 
@@ -244,6 +274,7 @@ enum HttpMethod {
 ### Embedding Generation Strategy
 
 **Domain Object Embedding (Request + Response Schemas):**
+
 ```
 Input: Flattened schema attributes only
 Example: "user.id user.email user.profile.avatar user.profile.bio[]"
@@ -251,6 +282,7 @@ Purpose: Find endpoints working with similar domain objects
 ```
 
 **Full Endpoint Embedding (Complete API Signature + Descriptions):**
+
 ```
 Input: Method + Path + Parameters + Headers + Schemas + Summary + Description + Tags
 Example: "GET /api/v1/users/{id} Authorization:Bearer id:required
@@ -364,8 +396,8 @@ export class EmbeddingService {
 ```typescript
 // Default weights favor domain object similarity (prevents duplicates)
 const DEFAULT_WEIGHTS = {
-  domainWeight: 0.6,   // 60% - Find similar data models
-  fullWeight: 0.4      // 40% - Find similar API signatures
+  domainWeight: 0.6, // 60% - Find similar data models
+  fullWeight: 0.4 // 40% - Find similar API signatures
 }
 
 // Search with combined scoring
@@ -413,8 +445,6 @@ CREATE INDEX endpoint_full_embedding_idx
 5. **HNSW indexes required** - Must be created during database setup for <1s latency
 6. **Environment is string** - Not enum, support any environment name (dev/staging/prod/qa/canary/etc.)
 
-
-
 ## Implementation Patterns
 
 These patterns ensure consistent implementation across all AI agents:
@@ -422,20 +452,24 @@ These patterns ensure consistent implementation across all AI agents:
 ### Naming Conventions
 
 **Database Tables/Models:**
+
 - Singular PascalCase: `Api`, `Endpoint`, `Change`, `EndpointSubscription`
 - Prisma auto-generates these from schema
 
 **Database Columns:**
+
 - camelCase: `apiId`, `domainObjectEmbedding`, `createdAt`
 - Follow Prisma conventions exactly
 
 **REST API Endpoints:**
+
 - Plural nouns: `/api/v1/specs`, `/api/v1/endpoints`, `/api/v1/subscriptions`
 - Resource-oriented, not action-oriented
 - Always versioned: `/api/v1/` prefix
 - Path parameters: `/api/v1/apis/{id}` (singular resource)
 
 **TypeScript Files:**
+
 - Services: `embedding.service.ts`, `search.service.ts`, `change-detection.service.ts`
 - Routes: `specs.route.ts`, `search.route.ts`, `subscriptions.route.ts`
 - Workers: `embeddings.worker.ts`, `change-detection.worker.ts`, `email.worker.ts`
@@ -444,11 +478,13 @@ These patterns ensure consistent implementation across all AI agents:
 - Export naming: PascalCase for classes, camelCase for functions
 
 **Environment Variables:**
+
 - SCREAMING_SNAKE_CASE: `DATABASE_URL`, `OPENAI_API_KEY`, `EMBEDDING_PROVIDER`, `RESEND_API_KEY`
 
 ### Code Organization
 
 **Route Structure:**
+
 ```typescript
 // apps/api/src/routes/[resource]/index.ts pattern
 import { FastifyPluginAsync } from 'fastify'
@@ -464,6 +500,7 @@ fastify.register(searchRoutes, { prefix: '/api/v1/search' })
 ```
 
 **Service Injection:**
+
 ```typescript
 // Fastify decorators for services
 fastify.decorate('searchService', new SearchService(prisma, embeddingProvider))
@@ -474,6 +511,7 @@ const results = await fastify.searchService.search(query)
 ```
 
 **Shared Package Imports:**
+
 ```typescript
 // Always use workspace protocol for internal packages
 import type { SearchResult, OpenAPISpec } from '@perrache/types'
@@ -484,6 +522,7 @@ import { createChangeDetector } from '@perrache/change-detection'
 ### API Response Format
 
 **Success Responses:**
+
 ```typescript
 // Simple data return (no wrapper)
 GET /api/v1/search?q=user
@@ -519,6 +558,7 @@ Body: {
 ```
 
 **Error Responses:**
+
 ```typescript
 // All errors follow this structure
 Status: 400/401/404/500
@@ -559,17 +599,24 @@ Body: {
 ### Error Handling
 
 **Pattern:**
+
 ```typescript
 // Custom error classes
 export class SpecValidationError extends Error {
-  constructor(message: string, public details: object) {
+  constructor(
+    message: string,
+    public details: object
+  ) {
     super(message)
     this.name = 'SpecValidationError'
   }
 }
 
 export class RateLimitError extends Error {
-  constructor(message: string, public retryAfter: number) {
+  constructor(
+    message: string,
+    public retryAfter: number
+  ) {
     super(message)
     this.name = 'RateLimitError'
   }
@@ -591,7 +638,8 @@ fastify.setErrorHandler((error, request, reply) => {
   }
 
   if (error instanceof RateLimitError) {
-    return reply.status(429)
+    return reply
+      .status(429)
       .header('Retry-After', error.retryAfter.toString())
       .send({
         error: {
@@ -605,9 +653,7 @@ fastify.setErrorHandler((error, request, reply) => {
   return reply.status(500).send({
     error: {
       code: 'INTERNAL_ERROR',
-      message: process.env.NODE_ENV === 'production'
-        ? 'An internal error occurred'
-        : error.message
+      message: process.env.NODE_ENV === 'production' ? 'An internal error occurred' : error.message
     }
   })
 })
@@ -794,6 +840,7 @@ Api (1) ──────> (N) Change
 ### Core API Endpoints
 
 **Spec Ingestion:**
+
 ```
 POST /api/v1/specs/openapi
 Auth: Bearer token (API key)
@@ -806,6 +853,7 @@ Query params:
 ```
 
 **Search & Discovery:**
+
 ```
 GET /api/v1/search?q={query}&limit={limit}&threshold={threshold}
 Response: 200 SearchResult[]
@@ -819,6 +867,7 @@ Query params:
 ```
 
 **Endpoint Details:**
+
 ```
 GET /api/v1/endpoints/{id}
 Response: 200 {
@@ -833,6 +882,7 @@ Response: 200 Endpoint[]  // Domain-object similarity
 ```
 
 **Subscriptions:**
+
 ```
 POST /api/v1/subscriptions/endpoint
 Body: { endpointId, consumerService, consumerEmail }
@@ -843,6 +893,7 @@ Response: 204
 ```
 
 **Breaking Changes:**
+
 ```
 GET /api/v1/changes/{apiId}
 Response: 200 Change[]
@@ -852,6 +903,7 @@ Response: 200 Change | null
 ```
 
 **Catalog Browsing:**
+
 ```
 GET /api/v1/apis?team={team}&environment={env}&canonical={bool}
 Response: 200 {
@@ -907,11 +959,13 @@ fastify.register(swaggerUi, {
 ### Authentication & Authorization
 
 **MVP (Phase 1):**
+
 - API key authentication for webhook endpoints
 - Bearer token format: `Authorization: Bearer <API_KEY>`
 - No user authentication (catalog is publicly readable)
 
 **Phase 2 (Future):**
+
 - OAuth 2.0 / SAML for SSO
 - Role-based access control (Viewer, Developer, API Owner, Governance Admin)
 - Namespace-based visibility (team boundaries)
@@ -924,9 +978,9 @@ import { randomBytes, createHash } from 'crypto'
 
 export class ApiKeyService {
   // Generate new API key
-  async createApiKey(userId: string, name: string): Promise<{ key: string, id: string }> {
-    const key = randomBytes(32).toString('base64url')  // Cryptographically strong
-    const hash = createHash('sha256').update(key).digest('hex')  // Store hash, not key
+  async createApiKey(userId: string, name: string): Promise<{ key: string; id: string }> {
+    const key = randomBytes(32).toString('base64url') // Cryptographically strong
+    const hash = createHash('sha256').update(key).digest('hex') // Store hash, not key
 
     const apiKey = await prisma.apiKey.create({
       data: {
@@ -938,7 +992,7 @@ export class ApiKeyService {
       }
     })
 
-    return { key, id: apiKey.id }  // Return plaintext key ONCE
+    return { key, id: apiKey.id } // Return plaintext key ONCE
   }
 
   // Validate API key
@@ -958,20 +1012,21 @@ export class ApiKeyService {
 import { Type } from '@sinclair/typebox'
 
 const SpecUploadSchema = Type.Object({
-  spec: Type.Object({}, { additionalProperties: true }),  // OpenAPI spec object
-  version: Type.Optional(Type.Union([
-    Type.Literal('3.0'),
-    Type.Literal('3.1')
-  ]))
+  spec: Type.Object({}, { additionalProperties: true }), // OpenAPI spec object
+  version: Type.Optional(Type.Union([Type.Literal('3.0'), Type.Literal('3.1')]))
 })
 
-fastify.post('/api/v1/specs/openapi', {
-  schema: {
-    body: SpecUploadSchema
+fastify.post(
+  '/api/v1/specs/openapi',
+  {
+    schema: {
+      body: SpecUploadSchema
+    }
+  },
+  async (request, reply) => {
+    // Request body is type-safe and validated
   }
-}, async (request, reply) => {
-  // Request body is type-safe and validated
-})
+)
 ```
 
 ### Rate Limiting
@@ -981,11 +1036,11 @@ fastify.post('/api/v1/specs/openapi', {
 import rateLimit from '@fastify/rate-limit'
 
 fastify.register(rateLimit, {
-  max: 100,                    // 100 requests
-  timeWindow: '1 hour',        // per hour
-  cache: 10000,                // Keep 10k rate limit records in memory
-  allowList: ['127.0.0.1'],    // Whitelist localhost
-  redis: redisClient,          // Optional: Use Redis for distributed rate limiting
+  max: 100, // 100 requests
+  timeWindow: '1 hour', // per hour
+  cache: 10000, // Keep 10k rate limit records in memory
+  allowList: ['127.0.0.1'], // Whitelist localhost
+  redis: redisClient, // Optional: Use Redis for distributed rate limiting
   keyGenerator: (request) => {
     return request.headers['x-api-key'] || request.ip
   },
@@ -1018,12 +1073,14 @@ fastify.register(rateLimit, {
 ### Search Performance (NFR-P1: <1s for 10k routes)
 
 **Strategy:**
+
 1. **HNSW indexes** on pgvector columns (m=16, ef_construction=64)
 2. **Approximate nearest neighbor search** (pgvector <=> operator)
 3. **Connection pooling** via Prisma (pool size based on load)
 4. **Query optimization:** Only fetch needed columns, limit results
 
 **Monitoring:**
+
 ```typescript
 // Log search latency
 const start = Date.now()
@@ -1037,14 +1094,16 @@ fastify.log.info({ duration, resultCount: results.length }, 'Search completed')
 ### Webhook Ingestion (NFR-P2: 100 concurrent uploads)
 
 **Strategy:**
+
 1. **Sync for small specs** (<100 endpoints): Process in 2-5s, return 200
 2. **Async for large specs** (100+ endpoints): Return 202 with job ID, queue processing
 3. **pg-boss queue:** PostgreSQL-based, handles concurrency
 4. **Batch embedding generation:** OpenAI supports batch API for cost savings
 
 **Implementation:**
+
 ```typescript
-POST /api/v1/specs/openapi
+POST / api / v1 / specs / openapi
 if (endpointCount < 100) {
   // Sync processing
   await generateEmbeddings(endpoints)
@@ -1059,12 +1118,14 @@ if (endpointCount < 100) {
 ### Embedding Generation (Updated NFR: 2-5s for typical specs)
 
 **Strategy:**
+
 1. **Batch API calls:** Generate multiple embeddings in single request
 2. **Parallel processing:** Use Promise.all for independent embeddings
 3. **Caching:** Cache embeddings for unchanged schemas
 4. **Provider selection:** OpenAI for production, Ollama for self-hosted
 
 **Performance Targets:**
+
 - Small spec (10 endpoints, 20 embeddings): <2s
 - Medium spec (50 endpoints, 100 embeddings): <5s
 - Large spec (500 endpoints, 1000 embeddings): <30s (background job)
@@ -1072,12 +1133,14 @@ if (endpointCount < 100) {
 ### Database Performance
 
 **Connection Pooling:**
+
 ```typescript
 // Prisma connection pool
-DATABASE_URL="postgresql://user:pass@host:5432/db?connection_limit=20"
+DATABASE_URL = 'postgresql://user:pass@host:5432/db?connection_limit=20'
 ```
 
 **Query Optimization:**
+
 - Select only needed fields: `select: { id: true, path: true }`
 - Use indexes for all filter/sort columns
 - Avoid N+1 queries (use `include` for relations)
@@ -1101,20 +1164,21 @@ services:
       POSTGRES_USER: perrache
       POSTGRES_PASSWORD: dev_password
     ports:
-      - "5432:5432"
+      - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  redis:  # Optional: for distributed rate limiting
+  redis: # Optional: for distributed rate limiting
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - '6379:6379'
 
 volumes:
   postgres_data:
 ```
 
 **Local Development:**
+
 ```bash
 # Start dependencies
 docker-compose up -d
@@ -1136,6 +1200,7 @@ pnpm dev
 ### Production Deployment
 
 **Infrastructure:**
+
 - **API:** AWS ECS Fargate or EC2 with Docker
 - **Database:** AWS RDS PostgreSQL 15+ with pgvector extension
 - **Frontend:** Vercel or AWS CloudFront + S3
@@ -1143,6 +1208,7 @@ pnpm dev
 - **Monitoring:** Prometheus + Grafana for metrics
 
 **Environment Variables:**
+
 ```bash
 # Production .env
 NODE_ENV=production
@@ -1155,6 +1221,7 @@ WEB_BASE_URL=https://perrache.com
 ```
 
 **Docker Production Build:**
+
 ```dockerfile
 # docker/Dockerfile.api
 FROM node:20-alpine AS base
@@ -1183,6 +1250,7 @@ CMD ["node", "dist/server.js"]
 ```
 
 **Deployment Steps:**
+
 ```bash
 # 1. Build Docker image
 docker build -f docker/Dockerfile.api -t perrache-api:latest .
@@ -1203,12 +1271,14 @@ pnpm --filter api prisma migrate deploy
 ### Prerequisites
 
 **Required:**
+
 - Node.js 20+ (LTS)
 - pnpm 8+
 - Docker & Docker Compose
 - Git
 
 **Recommended:**
+
 - VS Code with extensions:
   - Prisma
   - ESLint
@@ -1282,12 +1352,14 @@ pnpm clean
 **Context:** Need to share TypeScript types between Fastify backend and Next.js frontend while maintaining fast builds.
 
 **Rationale:**
+
 - Type sharing critical for dual-embedding architecture
 - Build caching speeds up CI/CD
 - Industry standard (Vercel, Meta)
 - Better than alternatives (Nx, Lerna, pnpm workspaces alone)
 
 **Consequences:**
+
 - Additional tooling complexity
 - Learning curve for contributors
 - Excellent developer experience with shared types
@@ -1301,12 +1373,14 @@ pnpm clean
 **Context:** Performance requirements (<1s search, 100 concurrent uploads) and API-first platform nature.
 
 **Rationale:**
+
 - Fastify 2-3x faster than Next.js API routes
 - Better control over PostgreSQL connection pooling
 - Separation of concerns (API can scale independently)
 - Plugin ecosystem (@fastify/swagger, @fastify/rate-limit)
 
 **Consequences:**
+
 - More deployment complexity (two apps)
 - CORS configuration needed
 - Superior performance for API-heavy workload
@@ -1320,12 +1394,14 @@ pnpm clean
 **Context:** Need to find both functionally similar APIs (same data) and similar API signatures.
 
 **Rationale:**
+
 - Single embedding insufficient for duplicate detection
 - Domain-only embedding finds similar data models regardless of naming
 - Full embedding captures API semantics (descriptions, tags, method)
 - Weighted scoring (60/40) balances both concerns
 
 **Consequences:**
+
 - 2x embedding generation cost
 - 2x vector storage (1536 dims × 2 per endpoint)
 - Significantly better duplicate detection accuracy
@@ -1339,12 +1415,14 @@ pnpm clean
 **Context:** Need vector similarity search for <1s latency at 10k+ endpoints.
 
 **Rationale:**
+
 - Reduces infrastructure complexity (one database instead of two)
 - pgvector HNSW indexes meet <1s latency requirement
 - Transactional consistency (embeddings + metadata in one DB)
 - Lower operational cost
 
 **Consequences:**
+
 - Slightly lower performance than dedicated vector DBs
 - PostgreSQL becomes single point of failure (mitigated by RDS)
 - Simpler architecture, easier to operate
@@ -1358,12 +1436,14 @@ pnpm clean
 **Context:** Need TypeScript-first ORM with migrations and type safety.
 
 **Rationale:**
+
 - Best TypeScript DX for ORM
 - Prisma now supports pgvector via `Unsupported()` type
 - Migrations and type generation worth raw SQL for vector queries
 - Can use `prisma.$queryRaw` for vector operations
 
 **Consequences:**
+
 - Vector queries require raw SQL
 - Not as elegant as full native support
 - Trade-off acceptable for overall productivity gain
@@ -1377,12 +1457,14 @@ pnpm clean
 **Context:** Need background job queue for embedding generation and change detection.
 
 **Rationale:**
+
 - No additional infrastructure (uses existing PostgreSQL)
 - Simpler deployment (no Redis to manage)
 - Sufficient for MVP workload
 - Can migrate to BullMQ later if needed
 
 **Consequences:**
+
 - Slightly slower than Redis-based queues
 - PostgreSQL load increases
 - Simplicity wins for MVP
@@ -1396,11 +1478,13 @@ pnpm clean
 **Context:** Need high-quality embeddings with option for self-hosted deployments.
 
 **Rationale:**
+
 - OpenAI best quality/cost ratio ($0.02 per 1M tokens, 1536 dims)
 - Provider abstraction allows Ollama for air-gapped deployments
 - Unified interface prevents vendor lock-in
 
 **Consequences:**
+
 - OpenAI API dependency for default setup
 - Monthly embedding costs scale with catalog size
 - Flexibility for different deployment scenarios
@@ -1414,11 +1498,13 @@ pnpm clean
 **Context:** Breaking change detection is critical but library may need swapping.
 
 **Rationale:**
+
 - @pb33f/openapi-changes is CLI-based (needs async queue execution)
 - Library choice may change based on accuracy testing
 - Adapter pattern isolates breaking change logic
 
 **Consequences:**
+
 - Extra abstraction layer
 - Easy to swap libraries if needed
 - Future-proof architecture
@@ -1432,11 +1518,13 @@ pnpm clean
 **Context:** Enterprises use varied environment names (dev, staging, prod, qa, canary, preview, etc.)
 
 **Rationale:**
+
 - Enum is too restrictive for enterprise flexibility
 - Different orgs have different deployment pipelines
 - String allows any environment name
 
 **Consequences:**
+
 - No database-level validation of environment values
 - More flexible for diverse enterprise needs
 
@@ -1449,12 +1537,14 @@ pnpm clean
 **Context:** API must be public for CI/CD webhooks, not just internal frontend.
 
 **Rationale:**
+
 - tRPC only works for TypeScript clients
 - CI/CD systems need standard HTTP/REST endpoints
 - OpenAPI documentation required (Perrache catalogs itself)
 - Shared types via Turborepo provide type safety
 
 **Consequences:**
+
 - Manual type sync between backend and frontend
 - Standard HTTP semantics (caching, CDN-friendly)
 - Works with any HTTP client

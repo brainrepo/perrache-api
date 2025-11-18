@@ -16,6 +16,7 @@ This document provides the complete epic and story breakdown for Perrache, decom
 Perrache's MVP consists of **7 epics** delivering automated API discovery, semantic search, and proactive change management:
 
 ### Epic 1: Foundation & Infrastructure
+
 **Value:** Establish the core platform infrastructure that enables all subsequent development
 
 **Scope:** Project setup (Fastify backend + Next.js frontend), PostgreSQL + pgvector, Docker deployment, API key auth, observability
@@ -27,6 +28,7 @@ Perrache's MVP consists of **7 epics** delivering automated API discovery, seman
 ---
 
 ### Epic 2: Webhook Ingestion & Spec Management
+
 **Value:** Enable zero-effort API cataloging through automated CI/CD integration
 
 **Scope:** Webhook API endpoint, OpenAPI spec validation, multi-environment support, version history, async processing, API key authentication
@@ -38,6 +40,7 @@ Perrache's MVP consists of **7 epics** delivering automated API discovery, seman
 ---
 
 ### Epic 3: Semantic Discovery Engine
+
 **Value:** Deliver the "magic moment" - find APIs by concept in seconds instead of weeks
 
 **Scope:** Dual-embedding generation, semantic search API with vector similarity, related endpoints discovery, catalog browsing, endpoint detail views
@@ -49,6 +52,7 @@ Perrache's MVP consists of **7 epics** delivering automated API discovery, seman
 ---
 
 ### Epic 4: Dependency Tracking & Subscriptions
+
 **Value:** Enable impact analysis by tracking who depends on what
 
 **Scope:** Endpoint subscription API, dependency graph storage, consumer visibility, subscription management
@@ -60,6 +64,7 @@ Perrache's MVP consists of **7 epics** delivering automated API discovery, seman
 ---
 
 ### Epic 5: Breaking Change Detection & Notifications
+
 **Value:** Prevent production incidents through proactive change management
 
 **Scope:** Automatic spec comparison, change classification (RED/YELLOW/GREEN), impact analysis, email notifications, risk flagging
@@ -71,17 +76,19 @@ Perrache's MVP consists of **7 epics** delivering automated API discovery, seman
 ---
 
 ### Epic 6: Frontend - Search & Discovery Interface
-**Value:** Provide intuitive, developer-first UI for API discovery
+
+**Value:** Provide intuitive, developer-first UI for API discovery and enable early adopter engagement
 
 **Scope:** Search homepage, search results, endpoint detail pages, related endpoints sidebar, API catalog browser, dark mode
 
-**Why:** Enables developers to interact with the semantic catalog. User-facing discovery interface.
+**Why:** Delivers end-to-end search experience to early adopters as soon as semantic discovery engine is ready. Enables rapid feedback on search quality and user experience while advanced features (dependency tracking, breaking changes) are being built.
 
-**Sequencing:** Epic 6 - delivers user interface for discovery (backend must be functional first)
+**Sequencing:** Epic 6 - delivers immediately after Epic 3 (Semantic Discovery Engine) to enable early adopter engagement. Does not require Epic 4 or Epic 5.
 
 ---
 
 ### Epic 7: Frontend - Governance & Breaking Change Dashboard
+
 **Value:** Give API owners and governance teams visibility into API landscape health
 
 **Scope:** Breaking change feed, impact analysis views, environment tracking display, risk flag visibility
@@ -95,15 +102,22 @@ Perrache's MVP consists of **7 epics** delivering automated API discovery, seman
 ### Phase 2 Epics (Deferred Post-MVP)
 
 **Epic 8: User Authentication & Access Control**
+
 - SSO integration, RBAC, namespace visibility, person subscriptions
 
 **Epic 9: Visual Landscape Clustering & Advanced Governance**
+
 - HDBSCAN + UMAP clustering, duplication detection, canonical marking, Total Cost of Reuse calculator
 
 ---
 
 **MVP Delivery Strategy:**
-Epics 1-7 deliver complete MVP value: automated ingestion → semantic discovery → breaking change management → governance visibility. Each epic builds on previous capabilities for incremental value delivery.
+Epics deliver in two phases for faster early adopter engagement:
+
+- **Phase 1 (Core Discovery):** Epics 1-3, 6 deliver end-to-end search experience: automated ingestion → semantic discovery → search UI
+- **Phase 2 (Advanced Features):** Epics 4-5, 7 add governance capabilities: dependency tracking → breaking change management → governance visibility
+
+This sequencing enables early adopter feedback on core discovery while building advanced features.
 
 ---
 
@@ -124,6 +138,7 @@ So that **the team has a consistent development environment with proper code qua
 **Given** a new greenfield project
 **When** the repository is initialized
 **Then** the following structure exists:
+
 - Monorepo with `/backend` (Fastify) and `/frontend` (Next.js) workspaces
 - TypeScript configured for both frontend and backend with strict mode
 - ESLint + Prettier configured with consistent code style rules
@@ -138,6 +153,7 @@ So that **the team has a consistent development environment with proper code qua
 **Prerequisites:** None (first story in the project)
 
 **Technical Notes:**
+
 - Use npm workspaces or pnpm workspaces for monorepo management
 - TypeScript 5.x with strict mode enabled
 - ESLint + Prettier integration for code consistency
@@ -169,6 +185,7 @@ So that **we can store and query API embeddings efficiently**.
 **Prerequisites:** Story 1.1 (project setup)
 
 **Technical Notes:**
+
 - Use Docker Compose for local PostgreSQL + pgvector setup
 - pgvector extension required for HNSW indexing (vector similarity search)
 - Configure connection pooling for production readiness
@@ -192,6 +209,7 @@ So that **we have a production-ready API server foundation**.
 **And** CORS middleware is configured for frontend origin
 **And** Request validation middleware is enabled (fastify-type-provider-zod or @fastify/swagger)
 **And** Global error handler catches and formats errors with structured response:
+
 ```json
 {
   "error": {
@@ -201,6 +219,7 @@ So that **we have a production-ready API server foundation**.
   }
 }
 ```
+
 **And** Health check endpoint `GET /health` returns 200 with database status
 **And** Request logging middleware logs all API requests with correlation IDs
 **And** OpenAPI documentation is auto-generated at `/docs`
@@ -210,6 +229,7 @@ So that **we have a production-ready API server foundation**.
 **Prerequisites:** Story 1.1, Story 1.2
 
 **Technical Notes:**
+
 - Fastify 4.x with TypeScript support
 - Plugins: @fastify/cors, @fastify/helmet (security headers), @fastify/rate-limit
 - Use Zod for request/response validation with type inference
@@ -245,6 +265,7 @@ So that **we have a modern, type-safe frontend foundation**.
 **Prerequisites:** Story 1.3 (backend server)
 
 **Technical Notes:**
+
 - Next.js 14+ with App Router (not Pages Router)
 - Tailwind CSS 3.x with custom theme configuration
 - shadcn/ui component library for consistent UI components (optional but recommended)
@@ -280,6 +301,7 @@ So that **the application can be deployed consistently across environments**.
 **Prerequisites:** Story 1.3, Story 1.4
 
 **Technical Notes:**
+
 - Multi-stage Docker builds to minimize image size
 - Use Node.js 20 Alpine base images for smaller footprint
 - .dockerignore to exclude node_modules, .git, etc.
@@ -317,6 +339,7 @@ So that **only authorized services can upload API specs**.
 **Prerequisites:** Story 1.2, Story 1.3
 
 **Technical Notes:**
+
 - Use crypto.randomBytes(32) for key generation
 - Bcrypt or Argon2 for hashing (Argon2 preferred for security)
 - Database schema: `api_keys` table with unique constraint on key_hash
@@ -339,15 +362,17 @@ So that **we can observe application health and debug issues in production**.
 **Given** the application is running
 **When** requests are processed
 **Then** all API requests are logged in structured JSON format with:
+
 - Timestamp, correlation ID, HTTP method, path, status code, latency
 - No PII or sensitive data in logs (API keys, auth tokens)
-**And** Log levels (ERROR, WARN, INFO, DEBUG) are configurable via environment variable
-**And** Metrics endpoint `GET /metrics` exposes Prometheus-compatible metrics:
+  **And** Log levels (ERROR, WARN, INFO, DEBUG) are configurable via environment variable
+  **And** Metrics endpoint `GET /metrics` exposes Prometheus-compatible metrics:
 - Request count by endpoint and status code
 - Request latency histograms (p50, p95, p99)
 - Active database connections
 - Error rate by endpoint
-**And** Health check endpoint `GET /health` returns detailed status:
+  **And** Health check endpoint `GET /health` returns detailed status:
+
 ```json
 {
   "status": "healthy",
@@ -358,6 +383,7 @@ So that **we can observe application health and debug issues in production**.
   }
 }
 ```
+
 **And** Application startup logs include version, environment, configuration summary
 
 **And** Logs are written to stdout (Docker-friendly) for log aggregation
@@ -365,6 +391,7 @@ So that **we can observe application health and debug issues in production**.
 **Prerequisites:** Story 1.3, Story 1.5
 
 **Technical Notes:**
+
 - Use pino for structured logging (Fastify default, high performance)
 - pino-pretty for human-readable logs in development
 - Correlation ID middleware (fastify-request-context or custom)
@@ -396,6 +423,7 @@ So that **we can persist and query the API catalog efficiently**.
 **Then** the following tables exist with proper indexes:
 
 **Table: `apis`**
+
 - id (UUID, primary key)
 - name (string, not null)
 - team (string, nullable)
@@ -405,6 +433,7 @@ So that **we can persist and query the API catalog efficiently**.
 - Index on name for fast lookup
 
 **Table: `api_versions`**
+
 - id (UUID, primary key)
 - api_id (UUID, foreign key → apis.id)
 - version (string, not null)
@@ -416,6 +445,7 @@ So that **we can persist and query the API catalog efficiently**.
 - Index on uploaded_at for version history queries
 
 **Table: `endpoints`**
+
 - id (UUID, primary key)
 - api_version_id (UUID, foreign key → api_versions.id)
 - path (string, not null)
@@ -434,6 +464,7 @@ So that **we can persist and query the API catalog efficiently**.
 **Prerequisites:** Story 1.2 (database setup)
 
 **Technical Notes:**
+
 - Use UUIDs for globally unique identifiers
 - JSONB for spec storage enables JSON querying without parsing
 - pgvector HNSW indexes for <1s similarity search on large catalogs
@@ -455,6 +486,7 @@ So that **only well-formed specs are ingested into the catalog**.
 **Given** an OpenAPI spec is submitted
 **When** validation runs
 **Then** the service checks:
+
 - Valid JSON structure
 - OpenAPI version is 3.0.x or 3.1.x
 - Required fields exist: openapi, info, paths
@@ -463,6 +495,7 @@ So that **only well-formed specs are ingested into the catalog**.
 - Each operation has valid HTTP method
 
 **And** validation errors return structured response:
+
 ```json
 {
   "valid": false,
@@ -482,6 +515,7 @@ So that **only well-formed specs are ingested into the catalog**.
 **Prerequisites:** Story 1.3 (backend server)
 
 **Technical Notes:**
+
 - Use library: @apidevtools/openapi-schemas or @readme/openapi-parser
 - Support both OpenAPI 3.0 and 3.1 spec versions
 - Dereference all $refs before storing (bundle into single spec)
@@ -503,6 +537,7 @@ So that **specs are automatically cataloged on every deployment**.
 **Given** the webhook endpoint is deployed
 **When** a POST request is made to `/api/v1/specs/openapi`
 **Then** the endpoint accepts:
+
 ```
 POST /api/v1/specs/openapi?version=3.1&environment=prod
 Authorization: Bearer {api_key}
@@ -522,6 +557,7 @@ Content-Type: application/json
 **And** API name is extracted from `info.title`
 **And** team/owner are extracted from `info.x-team` and `info.x-owner` (if present)
 **And** response returns 200 OK for small specs (<100 endpoints):
+
 ```json
 {
   "api_id": "uuid",
@@ -532,6 +568,7 @@ Content-Type: application/json
 ```
 
 **And** response returns 202 Accepted for large specs (≥100 endpoints):
+
 ```json
 {
   "job_id": "uuid",
@@ -543,6 +580,7 @@ Content-Type: application/json
 **Prerequisites:** Story 1.6 (API key auth), Story 2.1 (database schema), Story 2.2 (validation service)
 
 **Technical Notes:**
+
 - Query parameters: version (default 3.1), environment (default: dev)
 - Extract API metadata from OpenAPI `info` object
 - Use `info.title` as API name (sanitized)
@@ -565,6 +603,7 @@ So that **each route is individually queryable and searchable**.
 **Given** a validated OpenAPI spec is stored
 **When** endpoint extraction runs
 **Then** for each path/method combination in `paths` object:
+
 - Extract path (e.g., `/api/v1/users/{id}`)
 - Extract method (GET, POST, PUT, DELETE, PATCH)
 - Extract request schema (parameters, requestBody)
@@ -577,6 +616,7 @@ So that **each route is individually queryable and searchable**.
 **And** deprecated endpoints are marked with `deprecated: true` if `deprecated: true` in OpenAPI spec
 
 **And** extraction handles edge cases:
+
 - Missing request/response schemas (nullable)
 - Multiple response codes (prioritize 200, 201, then others)
 - Nested $refs in schemas (fully resolved)
@@ -586,6 +626,7 @@ So that **each route is individually queryable and searchable**.
 **Prerequisites:** Story 2.3 (webhook endpoint)
 
 **Technical Notes:**
+
 - Iterate through `spec.paths` object
 - For each path, iterate through operations (get, post, put, delete, patch)
 - Extract schemas from:
@@ -610,6 +651,7 @@ So that **consumers know which version to test against**.
 **Given** multiple specs are uploaded for the same API
 **When** specs are uploaded with different environment parameters
 **Then** each environment maintains its own current version:
+
 - `/api/v1/specs/openapi?environment=dev` → stores as dev version
 - `/api/v1/specs/openapi?environment=staging` → stores as staging version
 - `/api/v1/specs/openapi?environment=prod` → stores as prod version
@@ -619,6 +661,7 @@ So that **consumers know which version to test against**.
 **And** API endpoint `GET /api/v1/apis/{id}/versions?environment=prod` filters by environment
 
 **And** version history shows:
+
 ```json
 {
   "versions": [
@@ -638,8 +681,9 @@ So that **consumers know which version to test against**.
 **Prerequisites:** Story 2.3, Story 2.4
 
 **Technical Notes:**
+
 - Store all versions in `api_versions` table (never delete old versions)
-- Query for "current version per environment": SELECT * FROM api_versions WHERE environment = 'prod' ORDER BY uploaded_at DESC LIMIT 1
+- Query for "current version per environment": SELECT \* FROM api_versions WHERE environment = 'prod' ORDER BY uploaded_at DESC LIMIT 1
 - Version string extracted from `info.version` in OpenAPI spec
 - Consider adding API endpoint to compare two versions (future feature)
 - Index on (api_id, environment, uploaded_at) for fast queries
@@ -661,12 +705,13 @@ So that **the webhook endpoint remains responsive even for large catalogs**.
 **And** endpoint returns 202 Accepted with job_id immediately (<500ms)
 **And** spec processing is queued for background execution
 **And** background worker processes the job:
+
 - Extract endpoints
 - Store in database
 - Mark job as completed
-**And** job status is queryable via `GET /api/v1/jobs/{job_id}`
-**And** job statuses: queued, processing, completed, failed
-**And** failed jobs include error details
+  **And** job status is queryable via `GET /api/v1/jobs/{job_id}`
+  **And** job statuses: queued, processing, completed, failed
+  **And** failed jobs include error details
 
 **And** workers process jobs with exponential backoff on failure (max 3 retries)
 
@@ -675,6 +720,7 @@ So that **the webhook endpoint remains responsive even for large catalogs**.
 **Prerequisites:** Story 2.4 (endpoint extraction)
 
 **Technical Notes:**
+
 - Use job queue library: BullMQ (Redis-backed) or pg-boss (Postgres-backed)
 - BullMQ recommended for production (Redis provides better queue performance)
 - pg-boss alternative if avoiding Redis dependency
@@ -698,6 +744,7 @@ So that **organizations can efficiently catalog many APIs at once**.
 **Given** multiple OpenAPI specs need to be uploaded
 **When** a POST request is made to `/api/v1/specs/batch`
 **Then** the endpoint accepts:
+
 ```
 POST /api/v1/specs/batch
 Authorization: Bearer {api_key}
@@ -718,6 +765,7 @@ Content-Type: application/json
 **And** each spec is validated individually
 **And** valid specs are queued for processing (all async)
 **And** response returns array of job IDs:
+
 ```json
 {
   "jobs": [
@@ -735,6 +783,7 @@ Content-Type: application/json
 **Prerequisites:** Story 2.6 (async processing)
 
 **Technical Notes:**
+
 - Process each spec in the batch independently
 - Queue all valid specs as separate jobs (parallelizable)
 - Return immediately with job IDs (don't wait for processing)
@@ -765,6 +814,7 @@ So that **we can generate meaningful semantic embeddings from API schemas**.
 **Then** the service produces two flattened strings:
 
 **Domain Object String (request + response schemas):**
+
 - Flattens nested objects with dot notation: `user.profile.avatar`
 - Indicates arrays with `[]`: `user.tags[]`
 - Handles `anyOf`, `allOf`, `oneOf` by including all variants
@@ -772,6 +822,7 @@ So that **we can generate meaningful semantic embeddings from API schemas**.
 - Example output: `"user.id user.email user.name user.profile.avatar user.profile.bio[] user.tags[]"`
 
 **Full Endpoint String (complete API signature):**
+
 - Includes: method + path + headers + parameters + request schema + response schema
 - Example output: `"GET /api/v1/users/{id} Authorization:Bearer response:user.id user.email user.name"`
 
@@ -780,6 +831,7 @@ So that **we can generate meaningful semantic embeddings from API schemas**.
 **And** schema validation detects circular references and handles gracefully (max depth limit)
 
 **And** flattening handles edge cases:
+
 - Missing schemas (returns empty string)
 - Primitive types (string, number, boolean) included directly
 - Enum values included as alternatives
@@ -789,6 +841,7 @@ So that **we can generate meaningful semantic embeddings from API schemas**.
 **Prerequisites:** Story 2.4 (endpoint extraction)
 
 **Technical Notes:**
+
 - Recursive schema traversal with max depth limit (10 levels) to prevent infinite loops
 - Handle circular $refs by tracking visited schemas
 - Flatten both requestBody and response schemas separately, then combine for domain embedding
@@ -812,11 +865,13 @@ So that **we can search by both domain object similarity and full API signature 
 **Then** two embeddings are generated per endpoint:
 
 **Embedding 1: Domain Object Embedding (768 dimensions)**
+
 - Input: Flattened request + response schemas
 - Model: text-embedding-3-small or sentence-transformers (e.g., all-MiniLM-L6-v2)
 - Stored in `endpoints.domain_embedding` column
 
 **Embedding 2: Full Endpoint Embedding (768 dimensions)**
+
 - Input: Method + path + parameters + headers + schemas
 - Same model as domain embedding
 - Stored in `endpoints.full_embedding` column
@@ -834,6 +889,7 @@ So that **we can search by both domain object similarity and full API signature 
 **Prerequisites:** Story 3.1 (schema flattening), Story 2.6 (async processing)
 
 **Technical Notes:**
+
 - Embedding model options:
   - OpenAI text-embedding-3-small (768 dimensions, API-based, $0.00002/1K tokens)
   - sentence-transformers/all-MiniLM-L6-v2 (384 dimensions, local, free)
@@ -858,13 +914,15 @@ So that **I can discover APIs even when I don't know the exact naming**.
 **Given** the catalog contains endpoints with embeddings
 **When** a search query is made to `GET /api/v1/search?q={query}`
 **Then** the search API:
+
 - Generates query embedding using the same embedding model
 - Performs vector similarity search using pgvector:
   - Primary: Domain object embedding similarity (70% weight)
   - Secondary: Full endpoint embedding similarity (30% weight)
-  - Combined relevance score = 0.7 * domain_score + 0.3 * full_score
+  - Combined relevance score = 0.7 _ domain_score + 0.3 _ full_score
 - Returns top 20 results ranked by relevance score
 - Response format:
+
 ```json
 {
   "query": "customer email",
@@ -892,6 +950,7 @@ So that **I can discover APIs even when I don't know the exact naming**.
 **Prerequisites:** Story 3.2 (embedding generation)
 
 **Technical Notes:**
+
 - Use pgvector cosine similarity operator: `<=>` for distance (convert to similarity: 1 - distance)
 - HNSW index on both domain_embedding and full_embedding (created in Story 2.1)
 - Weighted search query:
@@ -921,9 +980,11 @@ So that **I can discover duplicate or related APIs before building a new one**.
 **Given** an endpoint detail page is loaded
 **When** related endpoints are requested via `GET /api/v1/endpoints/{id}/related`
 **Then** the API returns:
+
 - Top 10 semantically similar endpoints based on domain object embedding similarity
 - Excludes the current endpoint itself
 - Response format:
+
 ```json
 {
   "endpoint_id": "uuid",
@@ -952,6 +1013,7 @@ So that **I can discover duplicate or related APIs before building a new one**.
 **Prerequisites:** Story 3.2 (embeddings), Story 3.3 (search API)
 
 **Technical Notes:**
+
 - Use pgvector similarity search on domain_embedding column only
 - Query:
   ```sql
@@ -978,6 +1040,7 @@ So that **I can explore available APIs even without a specific search query**.
 **Given** the catalog contains multiple APIs
 **When** a request is made to `GET /api/v1/apis`
 **Then** the API returns paginated list of all APIs:
+
 ```json
 {
   "apis": [
@@ -998,11 +1061,13 @@ So that **I can explore available APIs even without a specific search query**.
 ```
 
 **And** supports filtering:
+
 - `?team={team}` - Filter by team
 - `?environment={env}` - Filter by environment (show APIs deployed to this env)
 - `?owner={owner}` - Filter by owner email
 
 **And** supports sorting:
+
 - `?sort=name` (alphabetical, default)
 - `?sort=updated` (most recently updated first)
 - `?sort=endpoints_count` (largest APIs first)
@@ -1014,6 +1079,7 @@ So that **I can explore available APIs even without a specific search query**.
 **Prerequisites:** Story 2.1 (database schema), Story 2.5 (multi-environment)
 
 **Technical Notes:**
+
 - Join apis with api_versions to get environment and last updated info
 - Count endpoints per API: JOIN with endpoints table
 - Use database indexes for fast filtering (team, owner, environment)
@@ -1034,6 +1100,7 @@ So that **I can understand exactly what the endpoint does before using it**.
 **Given** an endpoint exists in the catalog
 **When** a request is made to `GET /api/v1/endpoints/{id}`
 **Then** the API returns complete endpoint details:
+
 ```json
 {
   "id": "uuid",
@@ -1075,6 +1142,7 @@ So that **I can understand exactly what the endpoint does before using it**.
 **Prerequisites:** Story 2.4 (endpoint storage), Story 3.2 (embeddings)
 
 **Technical Notes:**
+
 - JOIN endpoints with apis to get API metadata
 - JOIN with api_versions to get version and environment
 - Consumers field will be populated by Epic 4 (dependency tracking)
@@ -1096,10 +1164,12 @@ So that **search remains fast even with 100,000+ endpoints**.
 **Given** the catalog contains 10,000+ endpoints with embeddings
 **When** HNSW indexes are configured
 **Then** pgvector HNSW indexes exist on:
+
 - `endpoints.domain_embedding` with optimal parameters
 - `endpoints.full_embedding` with optimal parameters
 
 **And** index parameters are tuned for performance:
+
 - `m` (max connections per layer): 16 (default)
 - `ef_construction` (build-time accuracy): 64
 - `ef_search` (query-time accuracy): 40
@@ -1107,6 +1177,7 @@ So that **search remains fast even with 100,000+ endpoints**.
 **And** search queries use index (verified with EXPLAIN ANALYZE)
 
 **And** search latency benchmarks:
+
 - 10,000 endpoints: <500ms (p95)
 - 50,000 endpoints: <1s (p95)
 - 100,000 endpoints: <2s (p95)
@@ -1118,6 +1189,7 @@ So that **search remains fast even with 100,000+ endpoints**.
 **Prerequisites:** Story 3.3 (search API)
 
 **Technical Notes:**
+
 - Create HNSW indexes in migration:
   ```sql
   CREATE INDEX idx_endpoints_domain_embedding
@@ -1152,6 +1224,7 @@ So that **we can track which services depend on which APIs**.
 **Then** the following table exists:
 
 **Table: `endpoint_subscriptions`**
+
 - id (UUID, primary key)
 - provider_endpoint_id (UUID, foreign key → endpoints.id) - The API being consumed
 - consumer_endpoint_id (UUID, foreign key → endpoints.id) - The service consuming it
@@ -1170,6 +1243,7 @@ So that **we can track which services depend on which APIs**.
 **Prerequisites:** Story 2.1 (endpoints table)
 
 **Technical Notes:**
+
 - Endpoint subscriptions represent production dependencies: "ServiceA's endpoint X calls ServiceB's endpoint Y"
 - Store both provider and consumer endpoint IDs for bidirectional queries
 - Consumer service name extracted from API metadata or provided explicitly
@@ -1190,6 +1264,7 @@ So that **I receive notifications when breaking changes affect my dependencies**
 **Given** two endpoints exist in the catalog (provider and consumer)
 **When** a POST request is made to `/api/v1/subscriptions/endpoint`
 **Then** the endpoint accepts:
+
 ```json
 POST /api/v1/subscriptions/endpoint
 Authorization: Bearer {api_key}
@@ -1208,6 +1283,7 @@ Content-Type: application/json
 **And** duplicate subscriptions return 409 Conflict (already subscribed)
 
 **And** response returns 201 Created:
+
 ```json
 {
   "subscription_id": "uuid",
@@ -1229,6 +1305,7 @@ Content-Type: application/json
 **Prerequisites:** Story 1.6 (API key auth), Story 4.1 (subscription schema)
 
 **Technical Notes:**
+
 - Validate both provider_endpoint_id and consumer_endpoint_id exist before creating subscription
 - Extract consumer metadata from request body
 - Store created_by from authenticated API key context
@@ -1251,6 +1328,7 @@ So that **I can understand my API dependencies and impact radius**.
 **Then** the API supports two query modes:
 
 **Provider mode (who depends on my endpoints):**
+
 ```
 GET /api/v1/subscriptions?provider_endpoint_id={uuid}
 
@@ -1271,6 +1349,7 @@ Response:
 ```
 
 **Consumer mode (what endpoints do I depend on):**
+
 ```
 GET /api/v1/subscriptions?consumer_endpoint_id={uuid}
 
@@ -1298,6 +1377,7 @@ Response:
 **Prerequisites:** Story 4.2 (subscription API)
 
 **Technical Notes:**
+
 - Query mode determined by presence of provider_endpoint_id vs consumer_endpoint_id parameter
 - JOIN with endpoints table to enrich response with API metadata
 - Support both query modes in single endpoint for simplicity
@@ -1329,6 +1409,7 @@ So that **I stop receiving notifications for changes I don't care about**.
 **Prerequisites:** Story 4.2 (subscription API)
 
 **Technical Notes:**
+
 - Soft delete vs hard delete: Hard delete for MVP (remove record)
 - Future enhancement: Soft delete with deleted_at timestamp for audit trail
 - Future enhancement: Ownership validation (only creator or admin can delete)
@@ -1348,6 +1429,7 @@ So that **I know the impact radius before making changes**.
 **Given** an endpoint has subscribers
 **When** a GET request is made to `/api/v1/endpoints/{id}`
 **Then** the response includes consumer information:
+
 ```json
 {
   "id": "uuid",
@@ -1385,6 +1467,7 @@ So that **I know the impact radius before making changes**.
 **Prerequisites:** Story 3.6 (endpoint detail API), Story 4.2 (subscription API)
 
 **Technical Notes:**
+
 - Enhance existing GET /api/v1/endpoints/{id} endpoint (from Story 3.6)
 - JOIN endpoint_subscriptions with endpoints table to get consumer details
 - Filter by environment: show only prod consumers by default, add ?include_all_envs=true for dev/staging
@@ -1405,6 +1488,7 @@ So that **I can understand the API landscape's dependency relationships**.
 **Given** multiple endpoint subscriptions exist
 **When** a GET request is made to `/api/v1/dependencies/graph`
 **Then** the API returns graph data in node-link format:
+
 ```json
 {
   "nodes": [
@@ -1429,6 +1513,7 @@ So that **I can understand the API landscape's dependency relationships**.
 ```
 
 **And** supports filtering by:
+
 - `?api_id={uuid}` - Show graph for specific API
 - `?team={team}` - Show graph for specific team's APIs
 - `?environment={env}` - Filter by environment
@@ -1442,6 +1527,7 @@ So that **I can understand the API landscape's dependency relationships**.
 **Prerequisites:** Story 4.2 (subscription API)
 
 **Technical Notes:**
+
 - Return data in standard graph format: nodes + links (edges)
 - Node properties: id, label, type, metadata
 - Link properties: source, target, relationship type
@@ -1464,11 +1550,13 @@ So that **I can proactively notify them before deployment**.
 **Given** a new spec is uploaded with breaking changes detected
 **When** impact analysis runs
 **Then** the system identifies affected consumers:
+
 - Query all subscriptions for changed endpoints (provider_endpoint_id)
 - Return list of consumer services and teams
 - Include consumer contact information (team, owner email)
 
 **And** webhook response includes impact preview:
+
 ```json
 {
   "api_id": "uuid",
@@ -1500,6 +1588,7 @@ So that **I can proactively notify them before deployment**.
 **Prerequisites:** Story 4.2 (subscriptions), Story 2.4 (endpoint extraction)
 
 **Technical Notes:**
+
 - Impact analysis triggered by webhook upload (Epic 2) when breaking changes detected (Epic 5)
 - Query endpoint_subscriptions where provider_endpoint_id IN (changed_endpoints)
 - Aggregate consumers by service and team
@@ -1529,6 +1618,7 @@ So that **we can track all API changes and notification delivery**.
 **Then** the following tables exist:
 
 **Table: `api_changes`**
+
 - id (UUID, primary key)
 - api_version_id (UUID, foreign key → api_versions.id)
 - previous_version_id (UUID, foreign key → api_versions.id, nullable)
@@ -1540,6 +1630,7 @@ So that **we can track all API changes and notification delivery**.
 - Index on detected_at for recent changes queries
 
 **Table: `change_notifications`**
+
 - id (UUID, primary key)
 - change_id (UUID, foreign key → api_changes.id)
 - recipient_email (string, not null)
@@ -1559,6 +1650,7 @@ So that **we can track all API changes and notification delivery**.
 **Prerequisites:** Story 2.1 (api_versions table)
 
 **Technical Notes:**
+
 - changes_json stores array of change objects from diff library
 - Severity enum values: 'breaking', 'potentially_breaking', 'non_breaking'
 - Delivery status: 'pending' (queued), 'sent' (delivered), 'failed' (retry needed)
@@ -1579,11 +1671,13 @@ So that **we can automatically identify when APIs introduce breaking changes**.
 **Given** a new OpenAPI spec is uploaded
 **When** a previous version exists for the same API
 **Then** the diff service:
+
 - Compares new spec against previous spec
 - Uses `@pb33f/openapi-changes` library for diff analysis
 - Classifies changes into severity levels:
 
 **RED (Breaking):**
+
 - Removed endpoints
 - Removed required fields from request/response
 - Changed field types (string → number)
@@ -1591,18 +1685,21 @@ So that **we can automatically identify when APIs introduce breaking changes**.
 - Stricter validation (new required fields)
 
 **YELLOW (Potentially Breaking):**
+
 - Changed response status codes
 - New required headers
 - Rate limit changes
 - Behavioral changes in descriptions
 
 **GREEN (Non-breaking):**
+
 - New endpoints
 - New optional fields
 - Removed validation rules (more permissive)
 - Documentation updates
 
 **And** diff output includes structured change objects:
+
 ```json
 {
   "changes": [
@@ -1630,6 +1727,7 @@ So that **we can automatically identify when APIs introduce breaking changes**.
 **Prerequisites:** Story 2.5 (version history)
 
 **Technical Notes:**
+
 - Use @pb33f/openapi-changes library (mature, well-tested)
 - Alternative libraries to evaluate: openapi-diff, oasdiff
 - Parse diff output into structured change objects
@@ -1651,12 +1749,14 @@ So that **changes are detected without manual intervention**.
 **Given** a new spec is uploaded via webhook endpoint
 **When** spec processing completes (after endpoint extraction)
 **Then** breaking change detection runs automatically:
+
 - Query previous version for the same API + environment
 - Run spec diff service (Story 5.2)
 - Store results in `api_changes` table
 - Calculate total affected consumers (from endpoint_subscriptions)
 
 **And** webhook response includes breaking change summary:
+
 ```json
 {
   "api_id": "uuid",
@@ -1681,8 +1781,9 @@ So that **changes are detected without manual intervention**.
 **Prerequisites:** Story 2.6 (async processing), Story 5.2 (diff service), Story 4.7 (impact analysis)
 
 **Technical Notes:**
+
 - Integrate into spec processing workflow (after endpoint extraction)
-- Query previous version: SELECT * FROM api_versions WHERE api_id = $api_id AND environment = $environment ORDER BY uploaded_at DESC LIMIT 1 OFFSET 1
+- Query previous version: SELECT \* FROM api_versions WHERE api_id = $api_id AND environment = $environment ORDER BY uploaded_at DESC LIMIT 1 OFFSET 1
 - Run diff only if previous version exists
 - Store api_changes record with severity, changes_json, affected_consumers count
 - Trigger notification workflow if breaking or potentially_breaking changes detected
@@ -1701,6 +1802,7 @@ So that **consumers receive timely alerts about API changes**.
 **Given** the backend application is deployed
 **When** email service is initialized
 **Then** SMTP client is configured with environment variables:
+
 - SMTP_HOST (e.g., smtp.sendgrid.net, smtp.mailgun.org)
 - SMTP_PORT (default: 587 for TLS)
 - SMTP_USER (SMTP username)
@@ -1721,6 +1823,7 @@ So that **consumers receive timely alerts about API changes**.
 **Prerequisites:** Story 1.3 (backend server), Story 1.7 (observability)
 
 **Technical Notes:**
+
 - Use email library: nodemailer (Node.js standard)
 - Support popular SMTP providers: SendGrid, Mailgun, AWS SES, generic SMTP
 - Store SMTP credentials securely (environment variables, not hardcoded)
@@ -1745,6 +1848,7 @@ So that **service owners are proactively informed of changes impacting their dep
 **Then** emails are sent to owners of dependent services:
 
 **Email content includes:**
+
 - API name and version
 - Environment (dev/staging/prod)
 - Summary of breaking changes (count by severity)
@@ -1754,6 +1858,7 @@ So that **service owners are proactively informed of changes impacting their dep
 - Contact information for API owner
 
 **Email template:**
+
 ```
 Subject: [Perrache Alert] Breaking Changes in {API_NAME} API ({ENVIRONMENT})
 
@@ -1796,6 +1901,7 @@ This notification was sent by Perrache API Catalog.
 **Prerequisites:** Story 5.3 (change detection), Story 5.4 (SMTP service), Story 4.7 (impact analysis)
 
 **Technical Notes:**
+
 - Extract recipient email from consumer service metadata (owner field)
 - Group affected endpoints by consumer service (one email per service)
 - Use HTML email template with plain text fallback
@@ -1819,11 +1925,13 @@ So that **we have visibility into services running outdated API versions**.
 **Given** breaking changes were deployed to production
 **When** risk assessment runs (24 hours after notification sent)
 **Then** the system identifies at-risk consumers:
+
 - Check if consumer service has updated its dependency
 - Mark consumers still using old version as "RISK"
 - Store risk flag in database
 
 **And** API endpoint `GET /api/v1/governance/risk` returns at-risk consumers:
+
 ```json
 {
   "at_risk_consumers": [
@@ -1851,6 +1959,7 @@ So that **we have visibility into services running outdated API versions**.
 **Prerequisites:** Story 5.5 (notifications), Story 4.2 (subscriptions)
 
 **Technical Notes:**
+
 - Add risk_flag field to endpoint_subscriptions table (boolean, default false)
 - Schedule background job to assess risk 24h after breaking change deployment
 - Risk assessment logic: subscription still points to old version after breaking change
@@ -1872,6 +1981,7 @@ So that **I can understand how the API has evolved over time**.
 **Given** an API has version history with detected changes
 **When** a GET request is made to `/api/v1/apis/{id}/changes`
 **Then** the API returns paginated change history:
+
 ```json
 {
   "api_id": "uuid",
@@ -1906,6 +2016,7 @@ So that **I can understand how the API has evolved over time**.
 ```
 
 **And** supports filtering by:
+
 - `?severity=breaking` - Show only breaking changes
 - `?environment=prod` - Filter by environment
 
@@ -1918,6 +2029,7 @@ So that **I can understand how the API has evolved over time**.
 **Prerequisites:** Story 5.3 (change detection)
 
 **Technical Notes:**
+
 - Query api_changes table joined with api_versions
 - Filter by api_id from api_versions relationship
 - Include summary counts (breaking, potentially_breaking, non_breaking)
@@ -1945,6 +2057,7 @@ So that **I can quickly search for APIs by concept without knowing exact names**
 **Given** the frontend application is running
 **When** a user visits the homepage
 **Then** the page displays:
+
 - Hero section with prominent search bar (large, centered)
 - Search placeholder text: "Search APIs by concept... (e.g., 'user email', 'payment processing')"
 - Tagline explaining semantic search: "Find APIs by what they do, not what they're called"
@@ -1953,6 +2066,7 @@ So that **I can quickly search for APIs by concept without knowing exact names**
 - Popular APIs (most subscribed/searched)
 
 **And** search bar supports:
+
 - Autocomplete suggestions as user types (debounced)
 - Enter key to trigger search
 - Minimum 3 characters to search
@@ -1967,6 +2081,7 @@ So that **I can quickly search for APIs by concept without knowing exact names**
 **Prerequisites:** Story 1.4 (Next.js frontend), Story 3.3 (search API)
 
 **Technical Notes:**
+
 - Next.js App Router with server components for initial page load
 - Client component for interactive search bar
 - React Query for search API calls with caching
@@ -1990,6 +2105,7 @@ So that **I can quickly identify the most relevant endpoints**.
 **Given** a user has entered a search query
 **When** search results are displayed
 **Then** the results page shows:
+
 - Search query at the top
 - Total results count
 - Results list with cards showing:
@@ -2005,6 +2121,7 @@ So that **I can quickly identify the most relevant endpoints**.
 **And** pagination: 20 results per page with "Load More" button
 
 **And** filter sidebar:
+
 - Filter by team
 - Filter by environment
 - Filter by method (GET, POST, PUT, DELETE, PATCH)
@@ -2012,6 +2129,7 @@ So that **I can quickly identify the most relevant endpoints**.
 **And** empty state: "No results found for '{query}'. Try different keywords."
 
 **And** method badges use color coding:
+
 - GET: blue
 - POST: green
 - PUT: orange
@@ -2021,6 +2139,7 @@ So that **I can quickly identify the most relevant endpoints**.
 **Prerequisites:** Story 6.1 (search interface), Story 3.3 (search API)
 
 **Technical Notes:**
+
 - Fetch search results from GET /api/v1/search?q={query}
 - Use React Query for caching and background refetching
 - Infinite scroll or "Load More" pagination
@@ -2044,6 +2163,7 @@ So that **I can understand exactly how to use the API**.
 **Then** the page displays:
 
 **Header Section:**
+
 - Endpoint path and method with color-coded badge
 - API name with link to API detail page
 - Team and owner information
@@ -2051,6 +2171,7 @@ So that **I can understand exactly how to use the API**.
 - Deprecation warning (if deprecated)
 
 **Schema Section:**
+
 - Request parameters (path, query, header)
 - Request body schema with JSON/YAML viewer
 - Response schema with JSON/YAML viewer
@@ -2058,17 +2179,20 @@ So that **I can understand exactly how to use the API**.
 - Copy button for schema examples
 
 **Consumers Section:**
+
 - List of services consuming this endpoint
 - Consumer team and service name
 - Total consumer count
 
 **Breaking Changes Section:**
+
 - Recent breaking changes (last 5)
 - Change severity badges (RED/YELLOW/GREEN)
 - Change descriptions
 - Link to full change history
 
 **Actions:**
+
 - "Copy curl command" button
 - "Subscribe to changes" button (Phase 2 - requires auth)
 - "Report issue" link to API owner
@@ -2080,6 +2204,7 @@ So that **I can understand exactly how to use the API**.
 **Prerequisites:** Story 3.6 (endpoint detail API), Story 4.5 (consumer visibility), Story 5.7 (change history)
 
 **Technical Notes:**
+
 - Fetch endpoint details from GET /api/v1/endpoints/{id}
 - Use syntax highlighter: react-syntax-highlighter or Prism
 - Schema viewer with collapsible sections for nested objects
@@ -2101,6 +2226,7 @@ So that **I can discover alternatives or duplicates before building**.
 **Given** a user is viewing an endpoint detail page
 **When** related endpoints are loaded
 **Then** a sidebar displays:
+
 - "Related Endpoints" heading
 - Top 5 semantically similar endpoints
 - Each related endpoint shows:
@@ -2123,6 +2249,7 @@ So that **I can discover alternatives or duplicates before building**.
 **Prerequisites:** Story 3.4 (related endpoints API), Story 6.3 (endpoint detail page)
 
 **Technical Notes:**
+
 - Fetch related endpoints from GET /api/v1/endpoints/{id}/related
 - Display similarity score as percentage or progress bar
 - Sticky sidebar using CSS position: sticky
@@ -2144,6 +2271,7 @@ So that **I can explore available APIs even without a specific search query**.
 **Given** a user navigates to /catalog
 **When** the catalog page loads
 **Then** the page displays:
+
 - Page title: "API Catalog"
 - Total API count
 - Grid of API cards showing:
@@ -2155,11 +2283,13 @@ So that **I can explore available APIs even without a specific search query**.
   - "View API" button
 
 **And** filter controls:
+
 - Filter by team (dropdown or autocomplete)
 - Filter by environment (checkboxes: dev, staging, prod)
 - Filter by owner
 
 **And** sort controls:
+
 - Sort by name (A-Z, Z-A)
 - Sort by last updated (newest first, oldest first)
 - Sort by endpoint count (largest first, smallest first)
@@ -2173,6 +2303,7 @@ So that **I can explore available APIs even without a specific search query**.
 **Prerequisites:** Story 3.5 (catalog browsing API)
 
 **Technical Notes:**
+
 - Fetch catalog from GET /api/v1/apis with filter/sort params
 - Filter and sort state managed in URL query params
 - Use React Query for caching
@@ -2197,6 +2328,7 @@ So that **I can understand the complete API surface**.
 **Then** the page displays:
 
 **Header Section:**
+
 - API name
 - Team and owner with contact link
 - Environments deployed with version numbers
@@ -2204,6 +2336,7 @@ So that **I can understand the complete API surface**.
 - Total endpoint count
 
 **Endpoints List:**
+
 - Grouped by tag or resource (if available in OpenAPI spec)
 - Each endpoint shows:
   - Path and method
@@ -2213,12 +2346,14 @@ So that **I can understand the complete API surface**.
   - Link to endpoint detail
 
 **Version History Section:**
+
 - Recent versions (last 10) with timestamps
 - Environment progression (dev → staging → prod)
 - Breaking change indicators
 - Link to version comparison (future feature)
 
 **Actions:**
+
 - "Download OpenAPI Spec" button (JSON/YAML)
 - "View Change History" link
 - "Subscribe to API" button (Phase 2)
@@ -2230,6 +2365,7 @@ So that **I can understand the complete API surface**.
 **Prerequisites:** Story 2.5 (version history API), Story 3.6 (endpoint detail API)
 
 **Technical Notes:**
+
 - Fetch API details from GET /api/v1/apis/{id}
 - Fetch endpoints from GET /api/v1/apis/{id}/endpoints (new endpoint needed)
 - Group endpoints by OpenAPI tags if available
@@ -2252,6 +2388,7 @@ So that **I can use the catalog comfortably in low-light environments**.
 **Given** the frontend application supports themes
 **When** a user toggles dark mode
 **Then** the entire application switches to dark theme:
+
 - Dark background colors (not pure black, use dark grays)
 - Light text colors with sufficient contrast (WCAG AA compliant)
 - Adjusted component colors (cards, buttons, badges)
@@ -2259,22 +2396,26 @@ So that **I can use the catalog comfortably in low-light environments**.
 - Icon colors inverted appropriately
 
 **And** theme preference is persisted:
+
 - Stored in localStorage
 - Remembered across sessions
 - Applied immediately on page load (no flash of wrong theme)
 
 **And** theme toggle control:
+
 - Icon button in header/navigation
 - Sun icon (light mode) / Moon icon (dark mode)
 - Smooth transition between themes
 
 **And** system preference detection:
+
 - Respects user's OS dark mode preference on first visit
 - Manual toggle overrides system preference
 
 **Prerequisites:** Story 1.4 (Next.js frontend), Story 6.1 (homepage)
 
 **Technical Notes:**
+
 - Use next-themes library for theme management
 - Tailwind CSS dark mode configuration (class strategy)
 - Define color palette for both light and dark themes
@@ -2304,6 +2445,7 @@ So that **I can monitor the API landscape for changes affecting my services**.
 **Given** breaking changes have been detected
 **When** a user navigates to /changes
 **Then** the page displays:
+
 - Page title: "Breaking Changes"
 - Filter controls:
   - Filter by severity (breaking, potentially_breaking, non_breaking)
@@ -2324,11 +2466,13 @@ So that **I can monitor the API landscape for changes affecting my services**.
 **And** pagination: 20 changes per page
 
 **And** severity badges use color coding:
+
 - RED (Breaking): red background
 - YELLOW (Potentially Breaking): yellow background
 - GREEN (Non-breaking): green background
 
 **And** clicking "View Details" shows expanded change details:
+
 - Full list of changes with descriptions
 - Affected endpoints
 - Affected consumers with team info
@@ -2338,6 +2482,7 @@ So that **I can monitor the API landscape for changes affecting my services**.
 **Prerequisites:** Story 5.7 (change history API)
 
 **Technical Notes:**
+
 - Fetch changes from GET /api/v1/changes (new aggregated endpoint across all APIs)
 - Filter state managed in URL query params
 - React Query for caching
@@ -2361,12 +2506,14 @@ So that **I can understand exactly what changed and who's affected**.
 **Then** the modal displays:
 
 **Header:**
+
 - API name and version
 - Environment
 - Timestamp
 - Close button
 
 **Changes Section:**
+
 - List of all changes grouped by severity
 - Each change shows:
   - Change type (field_removed, type_changed, etc.)
@@ -2375,6 +2522,7 @@ So that **I can understand exactly what changed and who's affected**.
   - Before/after comparison (if applicable)
 
 **Impact Analysis Section:**
+
 - Total affected consumers count
 - List of affected services:
   - Service name
@@ -2384,6 +2532,7 @@ So that **I can understand exactly what changed and who's affected**.
   - Notification status (sent/pending)
 
 **Actions:**
+
 - "Contact API Owner" button (mailto link)
 - "Download Change Report" button (JSON/CSV)
 - "View Full API" link
@@ -2397,6 +2546,7 @@ So that **I can understand exactly what changed and who's affected**.
 **Prerequisites:** Story 7.1 (breaking change feed), Story 5.3 (change detection)
 
 **Technical Notes:**
+
 - Use modal/dialog component (shadcn/ui Dialog)
 - Fetch change details from GET /api/v1/changes/{id}
 - Before/after comparison for schema changes (diff viewer)
@@ -2418,6 +2568,7 @@ So that **I'm immediately aware of changes affecting my dependencies**.
 **Given** a user has registered endpoint subscriptions
 **When** navigating to /my-dependencies
 **Then** the page displays:
+
 - Page title: "My Dependencies"
 - Filter: Select service from dropdown (if user manages multiple services)
 - List of dependencies showing:
@@ -2430,10 +2581,12 @@ So that **I'm immediately aware of changes affecting my dependencies**.
   - "View Details" link
 
 **And** dependencies with breaking changes are highlighted:
+
 - Red alert badge: "Breaking changes detected"
 - Visual prominence (border, background color)
 
 **And** clicking "View Details" shows:
+
 - Endpoint details
 - Recent breaking changes (if any)
 - Consumer subscription info
@@ -2446,6 +2599,7 @@ So that **I'm immediately aware of changes affecting my dependencies**.
 **Prerequisites:** Story 4.3 (list subscriptions API), Story 5.7 (change history)
 
 **Technical Notes:**
+
 - Fetch dependencies from GET /api/v1/subscriptions?consumer_endpoint_id={id}
 - For MVP: User manually selects their service (no auth, no "my" concept yet)
 - Phase 2: User authentication enables true "my dependencies" view
@@ -2469,6 +2623,7 @@ So that **I can track deployment progression and communicate version info to con
 **Then** the environment tracking section displays:
 
 **Environment Cards:**
+
 - Three cards for dev, staging, prod
 - Each card shows:
   - Environment name with color-coded badge
@@ -2479,11 +2634,13 @@ So that **I can track deployment progression and communicate version info to con
   - "View Spec" link
 
 **And** visual progression indicator:
+
 - Arrow showing dev → staging → prod flow
 - Highlight if version differs across environments
 - Warning if prod is behind staging
 
 **And** version comparison feature:
+
 - "Compare Versions" button between environments
 - Shows diff between dev vs staging, staging vs prod
 
@@ -2492,6 +2649,7 @@ So that **I can track deployment progression and communicate version info to con
 **Prerequisites:** Story 2.5 (multi-environment support), Story 6.6 (API detail page)
 
 **Technical Notes:**
+
 - Enhance API detail page (Story 6.6) with environment tracking section
 - Fetch versions from GET /api/v1/apis/{id}/versions?grouped_by_environment
 - Display current version per environment (most recent upload per env)
@@ -2513,6 +2671,7 @@ So that **I can identify and follow up with teams running outdated API versions*
 **Given** breaking changes were deployed and risk flags were set
 **When** navigating to /governance/risk
 **Then** the page displays:
+
 - Page title: "At-Risk Consumers"
 - Summary metrics:
   - Total at-risk consumers
@@ -2533,11 +2692,13 @@ So that **I can identify and follow up with teams running outdated API versions*
 **And** at-risk consumers are sorted by risk level (high → medium → low)
 
 **And** risk level color coding:
+
 - High: red background
 - Medium: orange background
 - Low: yellow background
 
 **And** clicking consumer row expands to show:
+
 - Notification history (sent timestamp, delivery status)
 - Breaking change details
 - Action buttons: "Resend Notification", "Mark as Resolved"
@@ -2547,6 +2708,7 @@ So that **I can identify and follow up with teams running outdated API versions*
 **Prerequisites:** Story 5.6 (risk flagging)
 
 **Technical Notes:**
+
 - Fetch risk data from GET /api/v1/governance/risk
 - Display summary metrics at top (card layout)
 - Filterable, sortable table component
@@ -2571,6 +2733,7 @@ So that **I can monitor the overall API ecosystem at a glance**.
 **Then** the page displays:
 
 **Key Metrics (Cards):**
+
 - Total APIs
 - Total Endpoints
 - Total Teams
@@ -2578,21 +2741,25 @@ So that **I can monitor the overall API ecosystem at a glance**.
 - At-Risk Consumers
 
 **Recent Activity Feed:**
+
 - Recent API uploads (last 10)
 - Recent breaking changes (last 5)
 - New consumers registered (last 10 subscriptions)
 
 **Top Contributors:**
+
 - Teams with most APIs
 - Most active APIs (by consumer count)
 - Most subscribed endpoints
 
 **Trend Charts (Phase 2 enhancement):**
+
 - API growth over time (line chart)
 - Breaking changes trend (bar chart by month)
 - Consumer adoption (line chart)
 
 **Quick Actions:**
+
 - "Upload API Spec" documentation link
 - "View Risk Dashboard" link
 - "Browse Catalog" link
@@ -2606,6 +2773,7 @@ So that **I can monitor the overall API ecosystem at a glance**.
 **Prerequisites:** Story 3.5 (catalog API), Story 5.7 (change history), Story 5.6 (risk flagging)
 
 **Technical Notes:**
+
 - Fetch metrics from aggregated endpoints:
   - GET /api/v1/stats (new endpoint for dashboard metrics)
   - GET /api/v1/changes?limit=5
@@ -2630,12 +2798,14 @@ So that **I can verify consumers were notified and track delivery status**.
 **Given** notifications were sent for breaking changes
 **When** viewing an API's change history page
 **Then** the page includes notification status section:
+
 - For each breaking change, show:
   - Notification sent count
   - Delivery status summary: "12 sent, 1 failed"
   - "View Notifications" button
 
 **And** clicking "View Notifications" expands to show:
+
 - Table of notifications with:
   - Recipient email
   - Recipient service
@@ -2645,11 +2815,13 @@ So that **I can verify consumers were notified and track delivery status**.
   - Error message (for failed deliveries)
 
 **And** delivery status badges:
+
 - Sent: green badge
 - Failed: red badge
 - Pending: yellow badge
 
 **And** failed notifications show:
+
 - Error message tooltip
 - "Retry" button to resend
 
@@ -2660,6 +2832,7 @@ So that **I can verify consumers were notified and track delivery status**.
 **Prerequisites:** Story 5.5 (email notifications), Story 5.1 (change_notifications table)
 
 **Technical Notes:**
+
 - Fetch notifications from GET /api/v1/changes/{id}/notifications (new endpoint)
 - Join change_notifications table with change_id
 - Display delivery_status with appropriate badges
