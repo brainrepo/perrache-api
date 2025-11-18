@@ -1,0 +1,186 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>2.6</storyId>
+    <title>Async Processing Queue for Large Specs</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-18</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/2-6-async-processing-queue-for-large-specs.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>backend developer</asA>
+    <iWant>background job processing for large spec uploads (≥100 endpoints)</iWant>
+    <soThat>the webhook endpoint remains responsive even for large catalogs</soThat>
+    <tasks>
+      - Task 1: Install and Configure pg-boss (AC: 8)
+      - Task 2: Create Spec Processing Worker (AC: 2, 5, 6)
+      - Task 3: Update Webhook Endpoint to Queue Large Specs (AC: 1, 7)
+      - Task 4: Create Job Status API Endpoint (AC: 3, 4)
+      - Task 5: Implement Dead Letter Queue Handling (AC: 6)
+      - Task 6: Add Structured Logging for Job Processing (AC: 2, 5, 6)
+      - Task 7: Write Unit Tests for Job Queue (AC: 2, 5, 6, 8)
+      - Task 8: Write Integration Tests for Async Webhook Flow (AC: 1, 3, 4, 7)
+      - Task 9: Update API Documentation (AC: 1, 3, 4)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. Large spec (≥100 endpoints) returns 202 Accepted with job_id in &lt;500ms
+    2. Background worker extracts endpoints, stores in database, marks job completed
+    3. GET /api/v1/jobs/{job_id} returns job status (queued/processing/completed/failed)
+    4. Failed jobs include error details with message, details, retry_count
+    5. Job retries with exponential backoff (1s, 4s, 16s) max 3 retries
+    6. Failed jobs after max retries move to dead letter queue
+    7. Small specs (&lt;100 endpoints) process synchronously with 200 OK response
+    8. Worker pool configured with 5 parallel workers, 2-minute timeout per job
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Queue System</section>
+        <snippet>Queue System: pg-boss (PostgreSQL-based) chosen for production. No Redis dependency. Retry strategy: exponential backoff with max 3 retries. Job timeout: 2 minutes per spec processing.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Project Structure</section>
+        <snippet>Queue structure: apps/api/src/queue/boss.ts for setup, apps/api/src/queue/workers/ for worker implementations. Jobs integrated with Fastify plugin pattern.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic Breakdown</title>
+        <section>Story 2.6</section>
+        <snippet>Async processing queue for specs with ≥100 endpoints. BullMQ (Redis) or pg-boss (Postgres) options. Job payload includes spec_json, api_id, version_id, environment. Worker pool: configurable concurrency (default 5).</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/2-5-multi-environment-version-history-support.md</path>
+        <title>Previous Story - Multi-Environment Version History</title>
+        <section>Dev Agent Record</section>
+        <snippet>Established patterns: VersionHistoryService class pattern, Fastify plugin registration in app.ts, TypeBox schemas for all routes, structured logging with fastify.log, comprehensive unit and integration tests. All 316 tests passing.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>apps/api/src/routes/specs/openapi.route.ts</path>
+        <kind>route</kind>
+        <symbol>openapiRoute</symbol>
+        <lines>1-150</lines>
+        <reason>Main webhook endpoint that needs async threshold logic. Already has SYNC_PROCESSING_THRESHOLD constant and response schemas for 202 Accepted. Will modify to check endpoint count and queue large specs.</reason>
+      </artifact>
+      <artifact>
+        <path>apps/api/src/services/endpoint-extraction.service.ts</path>
+        <kind>service</kind>
+        <symbol>EndpointExtractionService</symbol>
+        <lines>1-100</lines>
+        <reason>Service that worker will call to extract endpoints. Already implements extractAndStore() method. Will be invoked by spec processing worker.</reason>
+      </artifact>
+      <artifact>
+        <path>apps/api/src/services/spec-storage.service.ts</path>
+        <kind>service</kind>
+        <symbol>SpecStorageService</symbol>
+        <lines>N/A</lines>
+        <reason>Storage service for API specs. Worker will use to persist processed spec data.</reason>
+      </artifact>
+      <artifact>
+        <path>apps/api/src/plugins/endpoint-extraction.ts</path>
+        <kind>plugin</kind>
+        <symbol>endpointExtractionPlugin</symbol>
+        <lines>N/A</lines>
+        <reason>Example Fastify plugin pattern. Follow same pattern for pg-boss plugin registration.</reason>
+      </artifact>
+      <artifact>
+        <path>apps/api/src/app.ts</path>
+        <kind>app</kind>
+        <symbol>buildApp</symbol>
+        <lines>N/A</lines>
+        <reason>Main app file where plugins are registered and pg-boss will be initialized. Add graceful shutdown handler here.</reason>
+      </artifact>
+      <artifact>
+        <path>apps/api/src/__tests__/integration/endpoint-extraction.test.ts</path>
+        <kind>test</kind>
+        <symbol>N/A</symbol>
+        <lines>N/A</lines>
+        <reason>Example integration test pattern. Follow same structure for async processing integration tests.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <ecosystem name="Node.js">
+        <package name="pg-boss" version="^10.x" scope="production">PostgreSQL-based job queue (to be installed)</package>
+        <package name="@types/pg-boss" version="^10.x" scope="development">TypeScript types for pg-boss (to be installed)</package>
+        <package name="@prisma/client" version="^6.19.0" scope="production">Database access in workers</package>
+        <package name="@sinclair/typebox" version="^0.34.41" scope="production">Schema validation for job status API</package>
+        <package name="fastify" version="^5.0.0" scope="production">Web framework with plugin system</package>
+        <package name="pino" version="^8.17.2" scope="production">Structured logging</package>
+      </ecosystem>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - MUST use pg-boss (PostgreSQL-based queue) per architecture decision - no Redis dependency
+    - MUST return 202 Accepted for specs with ≥100 endpoints
+    - MUST return 200 OK for specs with &lt;100 endpoints (synchronous processing)
+    - MUST implement exponential backoff retry: 1s, 4s, 16s (max 3 retries)
+    - MUST use Fastify plugin pattern for dependency injection
+    - MUST return standard error response format: { error: { code, message, details? } }
+    - MUST use TypeBox schemas for request/response validation
+    - MUST set job timeout to 2 minutes per spec processing
+    - MUST use configurable worker concurrency (default 5 workers)
+    - Job processing MUST be idempotent (safe to retry)
+    - Dead letter queue MUST capture permanently failed jobs
+    - Database container is named "database" (for connection string)
+    - All paths must be project-relative (no absolute paths)
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>POST /api/v1/specs/openapi (modified)</name>
+      <kind>REST endpoint</kind>
+      <signature>POST /api/v1/specs/openapi?environment={env} - Returns 200 (sync) or 202 (async) based on endpoint count</signature>
+      <path>apps/api/src/routes/specs/openapi.route.ts</path>
+    </interface>
+    <interface>
+      <name>GET /api/v1/jobs/{job_id}</name>
+      <kind>REST endpoint</kind>
+      <signature>GET /api/v1/jobs/{job_id} - Returns job status (queued/processing/completed/failed)</signature>
+      <path>apps/api/src/routes/jobs/status.route.ts (NEW)</path>
+    </interface>
+    <interface>
+      <name>EndpointExtractionService.extractAndStore()</name>
+      <kind>Service method</kind>
+      <signature>async extractAndStore(apiVersionId: string, dereferencedSpec: object): Promise&lt;ExtractionResult&gt;</signature>
+      <path>apps/api/src/services/endpoint-extraction.service.ts</path>
+    </interface>
+    <interface>
+      <name>pg-boss worker handler</name>
+      <kind>Worker function</kind>
+      <signature>async (job: Job&lt;SpecProcessingJobData&gt;): Promise&lt;SpecProcessingJobResult&gt;</signature>
+      <path>apps/api/src/queue/workers/spec-processing.worker.ts (NEW)</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Testing follows existing patterns: unit tests in apps/api/src/__tests__/ for services and plugins, integration tests in apps/api/src/__tests__/integration/ for end-to-end flows. Use @prisma/client for database access in tests. All tests use pnpm test command. Maintain 316+ passing tests. Follow TypeScript strict mode. Mock external dependencies. Use descriptive test names with Given/When/Then pattern.
+    </standards>
+    <locations>
+      apps/api/src/__tests__/queue/spec-processing.worker.test.ts (NEW)
+      apps/api/src/__tests__/integration/async-processing.test.ts (NEW)
+      apps/api/src/__tests__/routes/jobs/status.route.test.ts (NEW)
+    </locations>
+    <ideas>
+      - AC 1,7: Test webhook returns 202 for ≥100 endpoints, 200 for &lt;100
+      - AC 2: Test worker successfully processes job (mock extraction, verify storage)
+      - AC 3,4: Test job status API returns correct status for all states
+      - AC 5: Test retry logic with exponential backoff (1s, 4s, 16s)
+      - AC 6: Test DLQ captures jobs after max retries
+      - AC 8: Test worker concurrency configuration (5 parallel workers)
+      - Integration: Full flow from webhook → queue → worker → status check
+      - Error cases: Invalid spec in worker, extraction failure, timeout
+    </ideas>
+  </tests>
+</story-context>

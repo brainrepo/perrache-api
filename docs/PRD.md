@@ -265,6 +265,16 @@ At this point, early adopters can start using Perrache to discover and explore A
 
 ### Vision (Future / Moonshot)
 
+**Async Processing for Large Catalogs**
+
+- Background job queue for spec uploads with 100+ endpoints
+- Job status tracking API for monitoring progress
+- Worker pool management for parallel processing
+- Dead letter queue for failed job recovery
+- Monitoring dashboard for queue health
+- Deferred from MVP to validate core discovery value first
+- Implementation when enterprise catalogs exceed 200 endpoints per spec
+
 **API Design Editor with Semantic Suggestions**
 
 - Built-in OpenAPI editor
@@ -491,10 +501,9 @@ Requirements organized by capability area. Each requirement connects to the core
 - Authentication via Bearer token (API key)
 - Validation of spec format before ingestion
 - **Processing model:**
-  - Small specs (<100 endpoints): Sync processing, return 200 with results in 2-5s
-  - Large specs (100+ endpoints): Return 202 Accepted with job ID, async processing
-  - `POST /api/v1/specs/batch` for parallel batch uploads
-- $refs resolution before processing
+  - All specs: Synchronous processing, return 200 with results in 2-5s
+  - Performance target: Handle specs up to 200 endpoints
+  - $refs resolution before processing
 
 **FR-1.2: Multi-Environment Support**
 
@@ -770,16 +779,17 @@ Full Endpoint Embedding:
 
 **NFR-P2: Webhook Ingestion Throughput**
 
-- System SHALL handle 100 concurrent spec uploads
-- Small specs (<100 endpoints): Process synchronously in 2-5s
-- Large specs (>100 endpoints): Accept and queue in <500ms
+- System SHALL handle 20 concurrent spec uploads (sufficient for MVP pilot scale)
+- All specs: Process synchronously in 2-5s
+- Target: Specs up to 200 endpoints
 - No data loss during concurrent uploads
+- Future scaling: Async processing deferred to post-MVP phase
 
 **NFR-P3: Embedding Generation**
 
-- Background embedding generation SHALL complete within 30 seconds per spec
-- Queue processing SHALL handle backlog of 1000+ specs
-- Failed embeddings SHALL retry with exponential backoff
+- Embedding generation SHALL complete synchronously within 5 seconds per spec (up to 200 endpoints)
+- Failed embeddings SHALL return appropriate error to user
+- Future: Async processing deferred to post-MVP scaling phase
 
 **NFR-P4: Breaking Change Detection**
 
