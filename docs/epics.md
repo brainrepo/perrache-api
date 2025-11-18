@@ -406,7 +406,7 @@ So that **we can observe application health and debug issues in production**.
 
 ## Epic 2: Webhook Ingestion & Spec Management
 
-**Epic Goal:** Enable zero-effort API cataloging through automated CI/CD webhook integration, supporting OpenAPI spec validation, multi-environment tracking, version history, and async processing for large specs - establishing the foundation for automated catalog maintenance.
+**Epic Goal:** Enable zero-effort API cataloging through automated CI/CD webhook integration, supporting OpenAPI spec validation, multi-environment tracking, and version history - establishing the foundation for automated catalog maintenance.
 
 ---
 

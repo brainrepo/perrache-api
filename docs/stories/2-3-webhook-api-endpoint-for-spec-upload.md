@@ -18,8 +18,8 @@ This story implements the core webhook ingestion endpoint that enables zero-effo
 
 - **Epic:** 2 - Webhook Ingestion & Spec Management
 - **Previous Story:** 2-2 OpenAPI Spec Validation Service (status: ready-for-dev)
-- **Dependencies:** Story 1.6 (API key auth), Story 2.1 (database schema), Story 2.2 (validation service)
-- **Enables:** Story 2.4 (Endpoint Extraction), Story 2.5 (Multi-environment support)
+- **Dependencies:** Story 1.6 (API key auth), Story 2.1 (database schema), Story 2.2 (validation service), Story 2.4 (endpoint extraction)
+- **Enables:** Story 2.5 (Multi-environment support)
 
 ### Technical Context
 
@@ -96,7 +96,7 @@ From completed Epic 1 and Story 2.2:
    - Owner from `info.x-owner` (optional)
    - Version from `info.version` (required)
 
-7. - [x] **And** response returns 200 OK for small specs (<100 endpoints):
+7. - [x] **And** response returns 200 OK for all specs:
 
    ```json
    {
@@ -108,28 +108,16 @@ From completed Epic 1 and Story 2.2:
    }
    ```
 
-8. - [x] **And** response returns 202 Accepted for large specs (>=100 endpoints):
-
-   ```json
-   {
-     "api_id": "uuid",
-     "version_id": "uuid",
-     "job_id": "uuid",
-     "status": "queued",
-     "message": "Spec queued for background processing"
-   }
-   ```
-
-9. - [x] **And** query parameters are handled correctly:
+8. - [x] **And** query parameters are handled correctly:
    - `version`: OpenAPI version (default: "3.1", supported: "3.0", "3.1")
    - `environment`: deployment environment (default: "dev")
    - Environment is stored as string (not enum) per architecture decision
 
-10. - [x] **And** correlation ID is included in response headers for tracing
+9. - [x] **And** correlation ID is included in response headers for tracing
 
-11. - [x] **And** rate limiting is enforced via API key middleware (100 requests/hour per key)
+10. - [x] **And** rate limiting is enforced via API key middleware (100 requests/hour per key)
 
-12. - [x] **And** all ingestion requests are logged with:
+11. - [x] **And** all ingestion requests are logged with:
 
 - API name
 - Environment
@@ -308,47 +296,28 @@ From completed Epic 1 and Story 2.2:
   ```
 - [x] Return storage result with all identifiers and counts
 
-### Task 6: Implement Sync/Async Processing Logic
+### Task 6: Implement Synchronous Processing Logic
 
-**AC Coverage:** 7, 8
+**AC Coverage:** 7
 
-- [x] Define endpoint threshold constant:
+- [x] All specs processed synchronously
+- [x] Response time target: <5s for specs with up to 200 endpoints
+- [x] Implement processing logic:
   ```typescript
-  const SYNC_PROCESSING_THRESHOLD = 100
+  // Synchronous processing for all specs
+  return reply.status(200).send({
+    api_id: result.apiId,
+    version_id: result.versionId,
+    status: 'processed',
+    endpoints_count: endpointsCount,
+    message: 'Spec processed successfully'
+  })
   ```
-- [x] Implement processing decision logic:
-  ```typescript
-  if (endpointsCount < SYNC_PROCESSING_THRESHOLD) {
-    // Sync processing - return 200
-    return reply.status(200).send({
-      api_id: result.apiId,
-      version_id: result.versionId,
-      status: 'processed',
-      endpoints_count: endpointsCount,
-      message: 'Spec processed successfully'
-    })
-  } else {
-    // Queue for async processing - return 202
-    const jobId = await this.queueService.enqueue('spec-processing', {
-      apiId: result.apiId,
-      versionId: result.versionId,
-      environment
-    })
-    return reply.status(202).send({
-      api_id: result.apiId,
-      version_id: result.versionId,
-      job_id: jobId,
-      status: 'queued',
-      message: 'Spec queued for background processing'
-    })
-  }
-  ```
-- [x] For MVP: Implement placeholder queue service that stores job reference
-- [x] Actual queue processing will be implemented in Story 2.6
+- [x] Note: Async processing deferred to post-MVP phase (moonshots)
 
 ### Task 7: Implement Request Logging
 
-**AC Coverage:** 12
+**AC Coverage:** 11
 
 - [x] Add structured logging for all requests:
   ```typescript
@@ -377,12 +346,11 @@ From completed Epic 1 and Story 2.2:
 
 ### Task 8: Write Unit Tests
 
-**AC Coverage:** 1-12
+**AC Coverage:** 1-11
 
 - [x] Create `apps/api/src/__tests__/routes/specs/openapi.route.test.ts`
 - [x] Test successful upload scenarios:
-  - [x] Valid small spec returns 200 with processed status
-  - [x] Valid large spec (100+ endpoints) returns 202 with queued status
+  - [x] Valid spec returns 200 with processed status
   - [x] API metadata extracted correctly from info object
   - [x] x-team and x-owner fields captured when present
   - [x] Environment defaults to 'dev' when not specified
@@ -399,8 +367,6 @@ From completed Epic 1 and Story 2.2:
   - [x] Valid spec passes validation
 - [x] Test edge cases:
   - [x] Empty paths object (valid but 0 endpoints)
-  - [x] Exactly 99 endpoints (sync processing)
-  - [x] Exactly 100 endpoints (async processing)
   - [x] Large spec size handling
 - [x] Test response format:
   - [x] Correlation ID header present
@@ -409,7 +375,7 @@ From completed Epic 1 and Story 2.2:
 
 ### Task 9: Write Integration Tests
 
-**AC Coverage:** 1-12
+**AC Coverage:** 1-11
 
 - [x] Create `apps/api/src/__tests__/routes/specs/openapi.route.test.ts` (integration tests included in route tests)
 - [x] Test end-to-end flow:
@@ -429,7 +395,7 @@ From completed Epic 1 and Story 2.2:
 
 ### Task 10: Document API Endpoint
 
-**AC Coverage:** 1, 7, 8, 9
+**AC Coverage:** 1, 7, 8
 
 - [x] Add OpenAPI documentation via Fastify schema:
   ```typescript
@@ -444,7 +410,6 @@ From completed Epic 1 and Story 2.2:
         body: OpenAPISpecSchema,
         response: {
           200: SuccessResponseSchema,
-          202: AcceptedResponseSchema,
           400: ErrorResponseSchema,
           401: UnauthorizedSchema,
           403: ForbiddenSchema
@@ -475,7 +440,7 @@ From completed Epic 1 and Story 2.2:
 - MUST follow Fastify route plugin pattern
 - MUST provide structured error responses matching architecture format
 - MUST NOT store plaintext API keys in logs or responses
-- MUST handle both sync (small specs) and async (large specs) processing paths
+- MUST handle synchronous processing for all specs (async deferred to post-MVP)
 - MUST store environment as string (not enum) per ADR-009
 - MUST use correlation IDs for request tracing per NFR-O1
 - MUST NOT block on embedding generation (deferred to Story 2.4/3.2)

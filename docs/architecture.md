@@ -48,7 +48,6 @@ This establishes the base monorepo structure with TypeScript, ESLint, Prettier, 
 | **Embedding Provider**             | OpenAI text-embedding-3-small | API               | Semantic Search                         | Best quality/cost ratio, 1536 dimensions, provider-agnostic interface  |
 | **Embedding Abstraction**          | @perrache/embedding package   | N/A               | API Backend                             | Unified interface across OpenAI/Cohere/Ollama providers                |
 | **Breaking Change Detection**      | @pb33f/openapi-changes        | Latest            | Change Detection                        | Adapter pattern for future library swaps, async queue execution        |
-| **Queue System**                   | pg-boss                       | Latest            | Async Processing                        | PostgreSQL-based job queue, no extra infrastructure, decoupled actions |
 | **Email Provider**                 | Resend                        | Latest            | Notifications                           | Modern API, great DX, breaking change alerts to service owners         |
 
 ## Deployment Strategy
@@ -96,12 +95,6 @@ perrache/
 │   │   │   │   ├── embedding.service.ts
 │   │   │   │   ├── search.service.ts
 │   │   │   │   └── change-detection.service.ts
-│   │   │   ├── queue/                # pg-boss setup
-│   │   │   │   ├── boss.ts
-│   │   │   │   └── workers/
-│   │   │   │       ├── embeddings.worker.ts
-│   │   │   │       ├── change-detection.worker.ts
-│   │   │   │       └── email.worker.ts
 │   │   │   ├── plugins/              # Fastify plugins
 │   │   │   │   ├── prisma.ts
 │   │   │   │   ├── swagger.ts
@@ -845,11 +838,10 @@ Api (1) ──────> (N) Change
 POST /api/v1/specs/openapi
 Auth: Bearer token (API key)
 Body: { spec: OpenAPISpec, version?: string }
-Response: 201 { id, message, jobId? }
+Response: 201 { id, message }
 
 Query params:
   - version: OpenAPI version (3.0 or 3.1, default 3.1)
-  - sync: boolean (force sync processing for small specs)
 ```
 
 **Search & Discovery:**
@@ -1091,31 +1083,34 @@ fastify.log.info({ duration, resultCount: results.length }, 'Search completed')
 // Alert if p95 > 1000ms
 ```
 
-### Webhook Ingestion (NFR-P2: 100 concurrent uploads)
+### Webhook Ingestion (NFR-P2: 20 concurrent uploads for MVP)
 
 **Strategy:**
 
-1. **Sync for small specs** (<100 endpoints): Process in 2-5s, return 200
-2. **Async for large specs** (100+ endpoints): Return 202 with job ID, queue processing
-3. **pg-boss queue:** PostgreSQL-based, handles concurrency
-4. **Batch embedding generation:** OpenAI supports batch API for cost savings
+1. **Synchronous processing only:** All specs processed in 2-5s, return 200
+2. **Target capacity:** Specs up to 200 endpoints
+3. **Connection pooling:** Optimize database connections for concurrent requests
+4. **Future scaling:** Async processing deferred to post-MVP phase
 
 **Implementation:**
 
 ```typescript
 POST / api / v1 / specs / openapi
-if (endpointCount < 100) {
-  // Sync processing
-  await generateEmbeddings(endpoints)
-  return reply.status(201).send({ id, message: 'Spec processed' })
-} else {
-  // Async processing
-  const jobId = await boss.send('generate-embeddings', { specId, endpoints })
-  return reply.status(202).send({ id, message: 'Spec queued', jobId })
-}
+
+// Synchronous processing for all specs
+await validateSpec(spec)
+await extractEndpoints(spec)
+await generateEmbeddings(endpoints)
+await detectBreakingChanges(apiId, spec)
+
+return reply.status(201).send({
+  id,
+  message: 'Spec processed',
+  endpoints_count: endpoints.length
+})
 ```
 
-### Embedding Generation (Updated NFR: 2-5s for typical specs)
+### Embedding Generation (NFR-P3: Synchronous Processing)
 
 **Strategy:**
 
@@ -1124,11 +1119,12 @@ if (endpointCount < 100) {
 3. **Caching:** Cache embeddings for unchanged schemas
 4. **Provider selection:** OpenAI for production, Ollama for self-hosted
 
-**Performance Targets:**
+**Performance Targets (MVP - Synchronous):**
 
 - Small spec (10 endpoints, 20 embeddings): <2s
 - Medium spec (50 endpoints, 100 embeddings): <5s
-- Large spec (500 endpoints, 1000 embeddings): <30s (background job)
+- Large spec (100-200 endpoints, 200-400 embeddings): <5s
+- Note: Specs with >200 endpoints may exceed timeout, deferred to post-MVP async processing
 
 ### Database Performance
 
@@ -1450,24 +1446,26 @@ pnpm clean
 
 ---
 
-### ADR-006: pg-boss Over BullMQ
+### ADR-006: Synchronous Processing for MVP (Deferred Async to Moonshots)
 
-**Decision:** Use pg-boss (PostgreSQL-based queue) instead of BullMQ (Redis-based)
+**Decision:** Use synchronous processing for MVP, defer async queue infrastructure to post-MVP phase
 
-**Context:** Need background job queue for embedding generation and change detection.
+**Context:** Need to process spec uploads with embedding generation and change detection.
 
 **Rationale:**
 
-- No additional infrastructure (uses existing PostgreSQL)
-- Simpler deployment (no Redis to manage)
-- Sufficient for MVP workload
-- Can migrate to BullMQ later if needed
+- MVP focus is validating semantic discovery value, not scaling to massive catalogs
+- Synchronous processing sufficient for pilot enterprises (most APIs <100 endpoints)
+- Avoids infrastructure complexity (no queue management, workers, job status tracking)
+- Faster MVP delivery by removing async overhead
+- Can add async processing in moonshots phase if scaling requires it
 
 **Consequences:**
 
-- Slightly slower than Redis-based queues
-- PostgreSQL load increases
-- Simplicity wins for MVP
+- Limited to specs with <200 endpoints for <5s response times
+- No job status tracking API
+- Webhook must wait for complete processing before returning
+- Simpler architecture and faster MVP delivery
 
 ---
 
