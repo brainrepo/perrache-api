@@ -595,6 +595,320 @@ describe('EndpointExtractionService', { sequential: true }, () => {
       }
     })
 
+    it('should extract path-level parameters shared across operations', async () => {
+      const apiName = uniqueName('PathLevelParams')
+      const { api, version } = await createTestApiVersion(apiName)
+
+      try {
+        const spec = {
+          openapi: '3.1.0',
+          info: { title: 'Test API', version: '1.0.0' },
+          paths: {
+            '/users/{id}': {
+              parameters: [
+                {
+                  name: 'id',
+                  in: 'path',
+                  required: true,
+                  schema: { type: 'string' },
+                  description: 'User ID'
+                },
+                {
+                  name: 'X-API-Version',
+                  in: 'header',
+                  required: false,
+                  schema: { type: 'string' }
+                }
+              ],
+              get: { summary: 'Get user', responses: { '200': { description: 'OK' } } },
+              delete: { summary: 'Delete user', responses: { '204': { description: 'No Content' } } }
+            }
+          }
+        }
+
+        const result = await service.extractAndStore(version.id, spec)
+
+        expect(result.endpointsExtracted).toBe(2)
+
+        // Both GET and DELETE should have the same path-level parameters
+        for (const endpoint of result.endpoints) {
+          const params = endpoint.parameters as Record<string, unknown>
+          expect(params.id).toEqual({
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+            description: 'User ID'
+          })
+          expect(params['X-API-Version']).toEqual({
+            in: 'header',
+            required: false,
+            schema: { type: 'string' },
+            description: null
+          })
+        }
+      } finally {
+        await cleanupApi(api.id)
+      }
+    })
+
+    it('should merge path-level and operation-level parameters', async () => {
+      const apiName = uniqueName('MergedParams')
+      const { api, version } = await createTestApiVersion(apiName)
+
+      try {
+        const spec = {
+          openapi: '3.1.0',
+          info: { title: 'Test API', version: '1.0.0' },
+          paths: {
+            '/posts/{id}': {
+              parameters: [
+                {
+                  name: 'id',
+                  in: 'path',
+                  required: true,
+                  schema: { type: 'string' },
+                  description: 'Post ID'
+                }
+              ],
+              get: {
+                summary: 'Get post',
+                parameters: [
+                  {
+                    name: 'include',
+                    in: 'query',
+                    required: false,
+                    schema: { type: 'array', items: { type: 'string' } },
+                    description: 'Related resources to include'
+                  }
+                ],
+                responses: { '200': { description: 'OK' } }
+              }
+            }
+          }
+        }
+
+        const result = await service.extractAndStore(version.id, spec)
+        const endpoint = result.endpoints[0]
+        const params = endpoint.parameters as Record<string, unknown>
+
+        // Should have both path-level and operation-level parameters
+        expect(params.id).toEqual({
+          in: 'path',
+          required: true,
+          schema: { type: 'string' },
+          description: 'Post ID'
+        })
+        expect(params.include).toEqual({
+          in: 'query',
+          required: false,
+          schema: { type: 'array', items: { type: 'string' } },
+          description: 'Related resources to include'
+        })
+      } finally {
+        await cleanupApi(api.id)
+      }
+    })
+
+    it('should allow operation-level parameters to override path-level parameters with same name', async () => {
+      const apiName = uniqueName('OverrideParams')
+      const { api, version } = await createTestApiVersion(apiName)
+
+      try {
+        const spec = {
+          openapi: '3.1.0',
+          info: { title: 'Test API', version: '1.0.0' },
+          paths: {
+            '/resources/{id}': {
+              parameters: [
+                {
+                  name: 'id',
+                  in: 'path',
+                  required: true,
+                  schema: { type: 'integer' },
+                  description: 'Resource ID (number)'
+                }
+              ],
+              get: {
+                summary: 'Get resource',
+                parameters: [
+                  {
+                    name: 'id',
+                    in: 'path',
+                    required: true,
+                    schema: { type: 'string' },
+                    description: 'Resource ID (string override)'
+                  }
+                ],
+                responses: { '200': { description: 'OK' } }
+              },
+              delete: {
+                summary: 'Delete resource',
+                responses: { '204': { description: 'No Content' } }
+              }
+            }
+          }
+        }
+
+        const result = await service.extractAndStore(version.id, spec)
+
+        const getEndpoint = result.endpoints.find((e) => e.method === 'GET')
+        const deleteEndpoint = result.endpoints.find((e) => e.method === 'DELETE')
+
+        // GET should use operation-level override
+        const getParams = getEndpoint?.parameters as Record<string, unknown>
+        expect(getParams.id).toEqual({
+          in: 'path',
+          required: true,
+          schema: { type: 'string' },
+          description: 'Resource ID (string override)'
+        })
+
+        // DELETE should use path-level parameter
+        const deleteParams = deleteEndpoint?.parameters as Record<string, unknown>
+        expect(deleteParams.id).toEqual({
+          in: 'path',
+          required: true,
+          schema: { type: 'integer' },
+          description: 'Resource ID (number)'
+        })
+      } finally {
+        await cleanupApi(api.id)
+      }
+    })
+
+    it('should extract parameters with all location types (path, query, header, cookie)', async () => {
+      const apiName = uniqueName('AllParamTypes')
+      const { api, version } = await createTestApiVersion(apiName)
+
+      try {
+        const spec = {
+          openapi: '3.1.0',
+          info: { title: 'Test API', version: '1.0.0' },
+          paths: {
+            '/items/{id}': {
+              parameters: [
+                {
+                  name: 'id',
+                  in: 'path',
+                  required: true,
+                  schema: { type: 'string' }
+                }
+              ],
+              get: {
+                parameters: [
+                  {
+                    name: 'filter',
+                    in: 'query',
+                    required: false,
+                    schema: { type: 'string' }
+                  },
+                  {
+                    name: 'X-Request-ID',
+                    in: 'header',
+                    required: true,
+                    schema: { type: 'string' }
+                  },
+                  {
+                    name: 'session',
+                    in: 'cookie',
+                    required: false,
+                    schema: { type: 'string' }
+                  }
+                ],
+                responses: { '200': { description: 'OK' } }
+              }
+            }
+          }
+        }
+
+        const result = await service.extractAndStore(version.id, spec)
+        const params = result.endpoints[0].parameters as Record<string, unknown>
+
+        expect(params.id).toMatchObject({ in: 'path', required: true })
+        expect(params.filter).toMatchObject({ in: 'query', required: false })
+        expect(params['X-Request-ID']).toMatchObject({ in: 'header', required: true })
+        expect(params.session).toMatchObject({ in: 'cookie', required: false })
+      } finally {
+        await cleanupApi(api.id)
+      }
+    })
+
+    it('should handle empty path-level parameters array', async () => {
+      const apiName = uniqueName('EmptyPathParams')
+      const { api, version } = await createTestApiVersion(apiName)
+
+      try {
+        const spec = {
+          openapi: '3.1.0',
+          info: { title: 'Test API', version: '1.0.0' },
+          paths: {
+            '/test': {
+              parameters: [],
+              get: {
+                parameters: [
+                  {
+                    name: 'query',
+                    in: 'query',
+                    schema: { type: 'string' }
+                  }
+                ],
+                responses: { '200': { description: 'OK' } }
+              }
+            }
+          }
+        }
+
+        const result = await service.extractAndStore(version.id, spec)
+        const params = result.endpoints[0].parameters as Record<string, unknown>
+
+        // Should only have operation-level parameter
+        expect(Object.keys(params)).toHaveLength(1)
+        expect(params.query).toBeDefined()
+      } finally {
+        await cleanupApi(api.id)
+      }
+    })
+
+    it('should handle path-level parameters with missing required fields gracefully', async () => {
+      const apiName = uniqueName('MalformedPathParams')
+      const { api, version } = await createTestApiVersion(apiName)
+
+      try {
+        const spec = {
+          openapi: '3.1.0',
+          info: { title: 'Test API', version: '1.0.0' },
+          paths: {
+            '/test': {
+              parameters: [
+                {
+                  name: 'valid',
+                  in: 'query',
+                  schema: { type: 'string' }
+                },
+                {
+                  // Missing 'name' field - should be skipped
+                  in: 'query',
+                  schema: { type: 'string' }
+                }
+              ],
+              get: {
+                responses: { '200': { description: 'OK' } }
+              }
+            }
+          }
+        }
+
+        const result = await service.extractAndStore(version.id, spec)
+        const params = result.endpoints[0].parameters as Record<string, unknown>
+
+        // Should only have the valid parameter
+        expect(Object.keys(params)).toHaveLength(1)
+        expect(params.valid).toBeDefined()
+      } finally {
+        await cleanupApi(api.id)
+      }
+    })
+
     it('should handle missing optional metadata fields', async () => {
       const apiName = uniqueName('MinimalOp')
       const { api, version } = await createTestApiVersion(apiName)
