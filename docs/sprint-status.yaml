@@ -55,7 +55,7 @@ development_status:
   2-2-openapi-spec-validation-service: done
   2-3-webhook-api-endpoint-for-spec-upload: done
   2-4-endpoint-extraction-storage: done
-  2-5-multi-environment-version-history-support: review
+  2-5-multi-environment-version-history-support: done
   2-6-async-processing-queue-for-large-specs: backlog
   2-7-batch-upload-endpoint-for-ci-cd-optimization: backlog
   epic-2-retrospective: optional
