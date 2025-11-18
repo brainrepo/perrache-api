@@ -86,29 +86,43 @@ export async function versionsRoute(fastify: FastifyInstance): Promise<void> {
 
       request.log.info({ apiId: id, environment, page, limit }, 'Version history requested')
 
-      const result = await fastify.versionHistoryService.getVersionHistory(id, {
-        environment,
-        page,
-        limit
-      })
+      try {
+        const result = await fastify.versionHistoryService.getVersionHistory(id, {
+          environment,
+          page,
+          limit
+        })
 
-      request.log.info({ apiId: id, versionsCount: result.total }, 'Version history returned')
+        request.log.info({ apiId: id, versionsCount: result.total }, 'Version history returned')
 
-      // Log warning for large requests
-      if (limit && limit > 50) {
-        request.log.warn({ apiId: id, limit }, 'Large version history request')
+        // Log warning for large requests
+        if (limit && limit > 50) {
+          request.log.warn({ apiId: id, limit }, 'Large version history request')
+        }
+
+        // Transform dates to ISO strings for JSON response
+        const response = {
+          ...result,
+          versions: result.versions.map((v) => ({
+            ...v,
+            uploaded_at: v.uploaded_at.toISOString()
+          }))
+        }
+
+        return reply.status(200).send(response)
+      } catch (err: any) {
+        // Handle 404 errors explicitly
+        if (err.statusCode === 404) {
+          return reply.status(404).send({
+            error: {
+              code: 'NOT_FOUND',
+              message: err.message
+            }
+          })
+        }
+        // Re-throw other errors to be handled by global error handler
+        throw err
       }
-
-      // Transform dates to ISO strings for JSON response
-      const response = {
-        ...result,
-        versions: result.versions.map((v) => ({
-          ...v,
-          uploaded_at: v.uploaded_at.toISOString()
-        }))
-      }
-
-      return reply.status(200).send(response)
     }
   )
 }
