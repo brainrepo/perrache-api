@@ -100,16 +100,9 @@ export async function versionsRoute(fastify: FastifyInstance): Promise<void> {
           request.log.warn({ apiId: id, limit }, 'Large version history request')
         }
 
-        // Transform dates to ISO strings for JSON response
-        const response = {
-          ...result,
-          versions: result.versions.map((v) => ({
-            ...v,
-            uploaded_at: v.uploaded_at.toISOString()
-          }))
-        }
-
-        return reply.status(200).send(response)
+        // Fastify's serializerCompiler automatically converts Date objects to ISO strings
+        // based on the response schema (uploaded_at has format: 'date-time')
+        return reply.status(200).send(result)
       } catch (err: any) {
         // Handle 404 errors explicitly
         if (err.statusCode === 404) {

@@ -116,9 +116,16 @@ export class EndpointExtractionService {
 
       if (!pathItem || typeof pathItem !== 'object') continue
 
-      const operations = this.extractOperations(pathItem as Record<string, unknown>)
+      const pathItemObj = pathItem as Record<string, unknown>
+
+      // Extract path-level parameters (shared across all operations)
+      const pathLevelParameters = pathItemObj.parameters as Array<Record<string, unknown>> | undefined
+
+      const operations = this.extractOperations(pathItemObj)
       for (const [method, operation] of Object.entries(operations)) {
-        endpoints.push(this.buildEndpoint(path, method as HttpMethod, operation))
+        endpoints.push(
+          this.buildEndpoint(path, method as HttpMethod, operation, pathLevelParameters)
+        )
       }
     }
 
@@ -150,9 +157,15 @@ export class EndpointExtractionService {
    * @param path - API path string
    * @param method - HTTP method enum value
    * @param operation - OpenAPI operation object
+   * @param pathLevelParameters - Optional path-level parameters shared across operations
    * @returns Extracted endpoint with all metadata
    */
-  private buildEndpoint(path: string, method: HttpMethod, operation: unknown): ExtractedEndpoint {
+  private buildEndpoint(
+    path: string,
+    method: HttpMethod,
+    operation: unknown,
+    pathLevelParameters?: Array<Record<string, unknown>>
+  ): ExtractedEndpoint {
     const op = operation as Record<string, unknown>
 
     return {
@@ -164,7 +177,7 @@ export class EndpointExtractionService {
       tags: Array.isArray(op.tags) ? (op.tags as string[]) : [],
       requestSchema: this.extractRequestSchema(op),
       responseSchema: this.extractResponseSchema(op),
-      parameters: this.extractParameters(op),
+      parameters: this.extractParameters(op, pathLevelParameters),
       deprecated: (op.deprecated as boolean) || false
     }
   }
@@ -255,23 +268,43 @@ export class EndpointExtractionService {
 
   /**
    * Extract parameters (path, query, header) from operation
+   * Merges path-level parameters with operation-level parameters.
+   * Operation-level parameters override path-level ones with the same name.
    *
    * @param operation - OpenAPI operation object
+   * @param pathLevelParameters - Optional path-level parameters to merge
    * @returns Parameters object or null if none present
    */
-  private extractParameters(operation: Record<string, unknown>): Prisma.InputJsonValue | null {
-    const parameters = operation.parameters as Array<Record<string, unknown>> | undefined
+  private extractParameters(
+    operation: Record<string, unknown>,
+    pathLevelParameters?: Array<Record<string, unknown>>
+  ): Prisma.InputJsonValue | null {
+    const operationParameters = operation.parameters as Array<Record<string, unknown>> | undefined
 
-    if (!parameters || !Array.isArray(parameters) || parameters.length === 0) {
+    // Merge path-level and operation-level parameters
+    const allParameters: Array<Record<string, unknown>> = []
+
+    // Add path-level parameters first
+    if (pathLevelParameters && Array.isArray(pathLevelParameters)) {
+      allParameters.push(...pathLevelParameters)
+    }
+
+    // Add operation-level parameters (these override path-level if same name)
+    if (operationParameters && Array.isArray(operationParameters)) {
+      allParameters.push(...operationParameters)
+    }
+
+    if (allParameters.length === 0) {
       return null
     }
 
     const params: Record<string, unknown> = {}
 
-    for (const param of parameters) {
+    for (const param of allParameters) {
       const name = param.name as string
       if (!name) continue
 
+      // Operation-level parameters override path-level ones
       params[name] = {
         in: param.in || null, // path, query, header, cookie
         required: (param.required as boolean) || false,
