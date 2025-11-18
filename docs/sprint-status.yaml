@@ -47,15 +47,15 @@ development_status:
   1-4-nextjs-frontend-application-setup: done
   1-5-docker-containerization-deployment-configuration: done
   1-6-api-key-authentication-system: done
-  1-7-observability-monitoring-setup: in-progress
+  1-7-observability-monitoring-setup: done
   epic-1-retrospective: optional
 
   epic-2: backlog
   2-1-database-schema-for-api-catalog: done
   2-2-openapi-spec-validation-service: done
-  2-3-webhook-api-endpoint-for-spec-upload: review
-  2-4-endpoint-extraction-storage: backlog
-  2-5-multi-environment-version-history-support: backlog
+  2-3-webhook-api-endpoint-for-spec-upload: done
+  2-4-endpoint-extraction-storage: done
+  2-5-multi-environment-version-history-support: done
   2-6-async-processing-queue-for-large-specs: backlog
   2-7-batch-upload-endpoint-for-ci-cd-optimization: backlog
   epic-2-retrospective: optional

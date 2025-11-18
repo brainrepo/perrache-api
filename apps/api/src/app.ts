@@ -15,7 +15,10 @@ import apiKeyServicePlugin from './plugins/api-key.js'
 import openAPIValidationServicePlugin from './plugins/openapi-validation.js'
 import specMetadataServicePlugin from './plugins/spec-metadata.js'
 import specStorageServicePlugin from './plugins/spec-storage.js'
+import endpointExtractionServicePlugin from './plugins/endpoint-extraction.js'
+import versionHistoryServicePlugin from './plugins/version-history.js'
 import specsRoutes from './routes/specs/index.js'
+import apisRoutes from './routes/apis/index.js'
 
 // Load package.json for version info using createRequire (ES module compatible)
 const require = createRequire(import.meta.url)
@@ -80,6 +83,12 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   // Register Spec Storage Service plugin (requires db connection)
   await app.register(specStorageServicePlugin)
+
+  // Register Endpoint Extraction Service plugin (requires db connection)
+  await app.register(endpointExtractionServicePlugin)
+
+  // Register Version History Service plugin (requires db connection)
+  await app.register(versionHistoryServicePlugin)
 
   // Register CORS middleware BEFORE routes
   await app.register(cors, {
@@ -254,6 +263,8 @@ export async function buildApp(): Promise<FastifyInstance> {
       await protectedContext.register(authPlugin)
       // Register specs routes (webhook ingestion)
       await protectedContext.register(specsRoutes, { prefix: '/specs' })
+      // Register APIs routes (version history, catalog)
+      await protectedContext.register(apisRoutes, { prefix: '/apis' })
     },
     { prefix: '/api/v1' }
   )

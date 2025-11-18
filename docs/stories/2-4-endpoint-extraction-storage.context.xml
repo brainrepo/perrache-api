@@ -1,0 +1,296 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>4</storyId>
+    <title>Endpoint Extraction & Storage</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-17</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/2-4-endpoint-extraction-storage.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>backend developer</asA>
+    <iWant>a service that extracts endpoints from OpenAPI specs and stores them in the database</iWant>
+    <soThat>each route is individually queryable and searchable</soThat>
+    <tasks>
+      <task id="1">Create Endpoint Model in Prisma Schema (NOTE: Already exists in schema.prisma lines 74-103)</task>
+      <task id="2">Create Endpoint Extraction Service with extractAndStore method</task>
+      <task id="3">Implement Request Schema Extraction from operation.requestBody</task>
+      <task id="4">Implement Response Schema Extraction with priority: 200 > 201 > 2xx > default</task>
+      <task id="5">Implement Parameters Extraction for path/query/header params</task>
+      <task id="6">Implement Database Storage with Idempotency (deleteMany + createMany)</task>
+      <task id="7">Create Fastify Plugin for Service registration</task>
+      <task id="8">Integrate with Webhook Upload Flow in openapi.route.ts</task>
+      <task id="9">Write Unit Tests for extraction logic</task>
+      <task id="10">Write Integration Tests for end-to-end flow</task>
+      <task id="11">Add JSDoc and OpenAPI Schema Documentation</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <ac id="1">Extract all path/method combinations from paths object and create endpoint records linked to api_version_id</ac>
+    <ac id="2">Deduplicate endpoints - same path + method = one endpoint per version</ac>
+    <ac id="3">Mark endpoints with deprecated: true if operation.deprecated is true</ac>
+    <ac id="4">Handle missing schemas gracefully - null for missing requestBody or response</ac>
+    <ac id="5">Response schema priority: 200 > 201 > first 2xx > default response</ac>
+    <ac id="6">All $refs already resolved via OpenAPIValidationService dereferencing</ac>
+    <ac id="7">Extract 100 endpoints in less than 5 seconds</ac>
+    <ac id="8">Return endpoints_count in webhook response JSON</ac>
+    <ac id="9">Capture all metadata: summary, description, operationId, tags, parameters, requestSchema, responseSchema</ac>
+    <ac id="10">Idempotent extraction - clear existing endpoints before recreating</ac>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>FR-2.2: Dual-Embedding Strategy for Semantic Similarity</section>
+        <snippet>System SHALL generate two embeddings per endpoint to enable domain object and full API similarity. Domain Object Embedding contains flattened request + response schemas. Full Endpoint Embedding contains path + method + headers + parameters + schemas.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Novel Architectural Pattern: Dual-Embedding Semantic Discovery</section>
+        <snippet>Generate two embeddings per endpoint: Domain Object Embedding (schemas only) and Full Endpoint Embedding (complete signature). Store raw OpenAPI schemas as Json, flattening deferred to Story 3.1.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Data Architecture - Prisma Schema</section>
+        <snippet>Endpoint model includes apiVersionId, path, method, summary, description, operationId, tags[], requestSchema (Json), responseSchema (Json), parameters (Json), deprecated flag. Unique constraint on (apiVersionId, path, method).</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Implementation Patterns</section>
+        <snippet>Services follow pattern: embedding.service.ts, search.service.ts. Route structure uses FastifyPluginAsync. Fastify decorators for service injection. Use workspace protocol for internal packages.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic Breakdown</title>
+        <section>Epic 2: Webhook Ingestion - Story 2.4</section>
+        <snippet>Endpoint Extraction and Storage - Parse validated OpenAPI spec and create individual endpoint records. Extract path, method, request schema, response schema. Store each endpoint with metadata for future embedding generation.</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/2-3-webhook-api-endpoint-for-spec-upload.md</path>
+        <title>Previous Story</title>
+        <section>Implementation Details</section>
+        <snippet>SpecStorageService returns storageResult with apiId, versionId, endpointsCount. OpenAPIValidationService.validate() returns validationResult.dereferenced with all $refs resolved. Fastify plugins registered in app.ts.</snippet>
+      </doc>
+    </docs>
+
+    <code>
+      <artifact>
+        <path>apps/api/prisma/schema.prisma</path>
+        <kind>database-schema</kind>
+        <symbol>Endpoint model</symbol>
+        <lines>74-103</lines>
+        <reason>Endpoint model already defined with all required fields: apiVersionId, path, method, summary, description, operationId, tags, requestSchema, responseSchema, parameters, deprecated. Uses HttpMethod enum and Json types for schemas.</reason>
+      </artifact>
+      <artifact>
+        <path>apps/api/src/services/spec-storage.service.ts</path>
+        <kind>service</kind>
+        <symbol>SpecStorageService.store</symbol>
+        <lines>55-119</lines>
+        <reason>Integration point - extraction service should be called after store() returns versionId. Pattern for service constructor with PrismaClient injection.</reason>
+      </artifact>
+      <artifact>
+        <path>apps/api/src/services/openapi-validation.service.ts</path>
+        <kind>service</kind>
+        <symbol>OpenAPIValidationService.validate</symbol>
+        <lines>146-202</lines>
+        <reason>Returns ValidationResult with dereferenced spec where all $refs are resolved. This dereferenced spec is input for endpoint extraction.</reason>
+      </artifact>
+      <artifact>
+        <path>apps/api/src/routes/specs/openapi.route.ts</path>
+        <kind>route</kind>
+        <symbol>openapiRoute</symbol>
+        <lines>108-211</lines>
+        <reason>Integration point - add extraction service call after line 153 (storage). Response already includes endpoints_count (line 182). Must update to use actual extracted count.</reason>
+      </artifact>
+      <artifact>
+        <path>apps/api/src/app.ts</path>
+        <kind>application-setup</kind>
+        <symbol>buildApp</symbol>
+        <lines>72-82</lines>
+        <reason>Plugin registration pattern - register endpoint extraction service plugin after specStorageServicePlugin (line 82). Follow await app.register(pluginName) pattern.</reason>
+      </artifact>
+      <artifact>
+        <path>apps/api/src/plugins/spec-storage.ts</path>
+        <kind>plugin</kind>
+        <symbol>specStorageServicePlugin</symbol>
+        <lines>1-50</lines>
+        <reason>Example plugin pattern using fastify-plugin fp(), decorating fastify instance with service, declaring TypeScript module augmentation.</reason>
+      </artifact>
+      <artifact>
+        <path>apps/api/src/utils/openapi-spec.utils.ts</path>
+        <kind>utility</kind>
+        <symbol>countEndpoints, VALID_HTTP_METHODS</symbol>
+        <lines>1-100</lines>
+        <reason>Existing utility for counting endpoints. VALID_HTTP_METHODS constant should be reused. Pattern for iterating OpenAPI paths and methods.</reason>
+      </artifact>
+      <artifact>
+        <path>apps/api/src/__tests__/services/spec-storage.service.test.ts</path>
+        <kind>test</kind>
+        <symbol>SpecStorageService tests</symbol>
+        <lines>1-278</lines>
+        <reason>Test pattern: describe/it blocks, db import from lib/db, cleanup helpers, fixture generation, expect assertions. Use uniqueName helper pattern for test isolation.</reason>
+      </artifact>
+      <artifact>
+        <path>apps/api/src/lib/db.ts</path>
+        <kind>database-client</kind>
+        <symbol>db</symbol>
+        <lines>1-50</lines>
+        <reason>Singleton PrismaClient instance. Import for service construction and tests.</reason>
+      </artifact>
+    </code>
+
+    <dependencies>
+      <node>
+        <package>@prisma/client</package>
+        <version>^6.19.0</version>
+        <usage>Database ORM - Endpoint.createMany, deleteMany for batch operations</usage>
+      </node>
+      <node>
+        <package>fastify</package>
+        <version>^5.0.0</version>
+        <usage>Web framework - FastifyInstance decorators for service injection</usage>
+      </node>
+      <node>
+        <package>fastify-plugin</package>
+        <version>^5.1.0</version>
+        <usage>Plugin wrapper - fp() for plugin encapsulation with dependencies</usage>
+      </node>
+      <node>
+        <package>openapi-types</package>
+        <version>^12.1.3</version>
+        <usage>Type definitions for OpenAPI.Document and OpenAPI.Operation</usage>
+      </node>
+      <node>
+        <package>vitest</package>
+        <version>^4.0.8</version>
+        <usage>Testing framework - describe, it, expect, beforeEach, afterEach</usage>
+      </node>
+      <node>
+        <package>typescript</package>
+        <version>^5.3.3</version>
+        <usage>Type safety - interfaces for ExtractedEndpoint, ExtractionResult</usage>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint id="1">MUST use dereferenced spec from OpenAPIValidationService (all $refs already resolved)</constraint>
+    <constraint id="2">MUST use batch database operations for performance (createMany, deleteMany) - no N+1 queries</constraint>
+    <constraint id="3">MUST follow Fastify plugin pattern with fp() wrapper and fastify.decorate()</constraint>
+    <constraint id="4">MUST preserve existing webhook response structure, only populate endpoints_count with actual extracted count</constraint>
+    <constraint id="5">MUST handle all HTTP methods: GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS using HttpMethod enum</constraint>
+    <constraint id="6">MUST NOT block webhook response for longer than 5 seconds for 100 endpoints</constraint>
+    <constraint id="7">MUST store raw schemas as Json (not flattened strings) - flattening deferred to Story 3.1</constraint>
+    <constraint id="8">MUST use Prisma ORM conventions: cuid() IDs, camelCase columns, cascade deletes</constraint>
+    <constraint id="9">MUST follow structured logging pattern with Pino (request.log.info with context objects)</constraint>
+    <constraint id="10">MUST follow error handling pattern: { error: { code, message, details } }</constraint>
+    <constraint id="11">File naming: kebab-case for files (endpoint-extraction.service.ts), PascalCase for classes (EndpointExtractionService)</constraint>
+    <constraint id="12">TypeScript module augmentation for Fastify instance decoration</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>EndpointExtractionService</name>
+      <kind>class</kind>
+      <signature>
+class EndpointExtractionService {
+  constructor(prisma: PrismaClient)
+  async extractAndStore(apiVersionId: string, dereferencedSpec: object): Promise&lt;ExtractionResult&gt;
+  private extractEndpoints(spec: object): ExtractedEndpoint[]
+  private buildEndpoint(path: string, method: string, operation: any): ExtractedEndpoint
+  private extractRequestSchema(operation: any): object | null
+  private extractResponseSchema(operation: any): object | null
+  private extractParameters(operation: any): object | null
+  private storeEndpoints(apiVersionId: string, endpoints: ExtractedEndpoint[]): Promise&lt;void&gt;
+}
+      </signature>
+      <path>apps/api/src/services/endpoint-extraction.service.ts</path>
+    </interface>
+    <interface>
+      <name>ExtractedEndpoint</name>
+      <kind>interface</kind>
+      <signature>
+interface ExtractedEndpoint {
+  path: string
+  method: string
+  summary?: string
+  description?: string
+  operationId?: string
+  tags: string[]
+  requestSchema?: object
+  responseSchema?: object
+  parameters?: object
+  deprecated: boolean
+}
+      </signature>
+      <path>apps/api/src/services/endpoint-extraction.service.ts</path>
+    </interface>
+    <interface>
+      <name>ExtractionResult</name>
+      <kind>interface</kind>
+      <signature>
+interface ExtractionResult {
+  endpointsExtracted: number
+  endpoints: ExtractedEndpoint[]
+}
+      </signature>
+      <path>apps/api/src/services/endpoint-extraction.service.ts</path>
+    </interface>
+    <interface>
+      <name>Fastify decorator</name>
+      <kind>module-augmentation</kind>
+      <signature>
+declare module 'fastify' {
+  interface FastifyInstance {
+    endpointExtractionService: EndpointExtractionService
+  }
+}
+      </signature>
+      <path>apps/api/src/plugins/endpoint-extraction.ts</path>
+    </interface>
+    <interface>
+      <name>Webhook route integration</name>
+      <kind>integration-point</kind>
+      <signature>
+// In openapi.route.ts after line 153
+const extractionResult = await fastify.endpointExtractionService.extractAndStore(
+  storageResult.versionId,
+  validationResult.dereferenced!
+)
+// Use extractionResult.endpointsExtracted instead of storageResult.endpointsCount
+      </signature>
+      <path>apps/api/src/routes/specs/openapi.route.ts</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+Testing uses Vitest framework with describe/it/expect pattern. Database integration tests are sequential (sequential: true) to avoid conflicts. Each test is self-contained with immediate cleanup using afterAll or finally blocks. Tests use unique names via randomUUID() to prevent collisions. Mock services via constructor injection for unit tests. Import db singleton from lib/db.ts for integration tests. Test fixtures should be placed in __tests__/fixtures/ directory.
+    </standards>
+    <locations>
+      <location>apps/api/src/__tests__/services/endpoint-extraction.service.test.ts</location>
+      <location>apps/api/src/__tests__/integration/endpoint-extraction.test.ts</location>
+      <location>apps/api/src/__tests__/fixtures/openapi-specs/</location>
+    </locations>
+    <ideas>
+      <idea acId="1">Test extraction of all HTTP methods from spec with multiple paths and operations</idea>
+      <idea acId="2">Test unique constraint prevents duplicate path+method per apiVersionId in database</idea>
+      <idea acId="3">Test operation.deprecated: true sets endpoint.deprecated: true</idea>
+      <idea acId="4">Test missing requestBody returns null, missing response returns null</idea>
+      <idea acId="5">Test response priority: spec with 200, 201, 204, default - only 200 schema extracted</idea>
+      <idea acId="6">Test with spec containing $refs - verify dereferenced input is used correctly</idea>
+      <idea acId="7">Performance test: create spec with 100 endpoints, measure extraction time &lt; 5s</idea>
+      <idea acId="8">Integration test: upload spec via route, verify response includes correct endpoints_count</idea>
+      <idea acId="9">Test all metadata fields extracted: summary, description, operationId, tags, parameters</idea>
+      <idea acId="10">Test idempotency: call extractAndStore twice for same apiVersionId, verify same endpoint count</idea>
+    </ideas>
+  </tests>
+</story-context>
